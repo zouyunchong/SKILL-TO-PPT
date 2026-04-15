@@ -8,7 +8,9 @@
 **Author:** lewis &lt;sudolewis@gmail.com&gt;
 **License:** MIT
 
-![html-ppt · 36 themes](docs/readme/themes.png)
+![html-ppt — cover with live previews](docs/readme/hero.gif)
+
+> One command installs **36 themes × 20 canvas FX × 31 layouts × 14 full decks = 101 PPT skills**. Every preview above is a live iframe of a real template file rendering inside the deck — no screenshots, no mock-ups.
 
 ## Install (one command)
 
@@ -45,6 +47,8 @@ that supports AgentSkills can author presentations by asking things like:
 `y2k-chrome`, `retro-tv`, `japanese-minimal`, `vaporwave`, `midcentury`,
 `corporate-clean`, `academic-paper`, `news-broadcast`, `pitch-deck-vc`,
 `magazine-bold`, `engineering-whiteprint`.
+
+![36 themes · 8 of them](docs/readme/themes.png)
 
 Each is a pure CSS-tokens file — swap one `<link>` to reskin the entire deck.
 Browse them all in `templates/theme-showcase.html` (each slide rendered in an
@@ -86,6 +90,10 @@ chart-pie · chart-radar · arch-diagram · process-steps · cta · thanks
 
 Every layout ships with realistic demo data so you can drop it into a deck
 and immediately see it render.
+
+![31 layouts auto-cycling through real template files](docs/readme/layouts-live.gif)
+
+*The big iframe is loading `templates/single-page/<name>.html` directly and cycling through all 31 layouts every 2.8 seconds.*
 
 ![47 animations — 27 CSS + 20 canvas FX](docs/readme/animations.png)
 
