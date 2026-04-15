@@ -8,6 +8,8 @@
 **Author:** lewis &lt;sudolewis@gmail.com&gt;
 **License:** MIT
 
+![html-ppt · 36 themes](docs/readme/themes.png)
+
 ## Install (one command)
 
 ```bash
@@ -48,6 +50,8 @@ Each is a pure CSS-tokens file — swap one `<link>` to reskin the entire deck.
 Browse them all in `templates/theme-showcase.html` (each slide rendered in an
 isolated iframe so theme ≠ theme is visually guaranteed).
 
+![14 full-deck templates](docs/readme/templates.png)
+
 ### 14 Full-deck templates
 
 Eight extracted from real-world decks, six generic scenario scaffolds:
@@ -70,6 +74,8 @@ Each is a self-contained folder with scoped `.tpl-<name>` CSS so multiple
 decks can be previewed side-by-side without collisions. Browse the full
 gallery in `templates/full-decks-index.html`.
 
+![31 single-page layouts](docs/readme/layouts.png)
+
 ### 31 Single-page layouts
 
 cover · toc · section-divider · bullets · two-column · three-column ·
@@ -80,6 +86,8 @@ chart-pie · chart-radar · arch-diagram · process-steps · cta · thanks
 
 Every layout ships with realistic demo data so you can drop it into a deck
 and immediately see it render.
+
+![47 animations — 27 CSS + 20 canvas FX](docs/readme/animations.png)
 
 ### 27 CSS animations + 20 Canvas FX
 
