@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="minimal-white">
+<head>
+<meta charset="utf-8"><title>Theme Showcase — html-ppt</title>
+<link rel="stylesheet" href="../assets/fonts.css">
+<link rel="stylesheet" href="../assets/base.css">
+<link rel="stylesheet" id="theme-link" href="../assets/themes/minimal-white.css">
+<link rel="stylesheet" href="../assets/animations/animations.css">
+<style>
+.swatch{display:flex;gap:10px;margin-top:14px}
+.swatch div{width:44px;height:44px;border-radius:10px;border:1px solid var(--border)}
+.tname{font-family:var(--font-mono);font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.1em}
+.theme-indicator{position:absolute;top:24px;right:40px;font-family:var(--font-mono);font-size:11px;color:var(--text-3);letter-spacing:.1em}
+</style>
+</head>
+<body data-themes="minimal-white,editorial-serif,soft-pastel,sharp-mono,arctic-cool,sunset-warm,catppuccin-latte,catppuccin-mocha,dracula,tokyo-night,nord,solarized-light,gruvbox-dark,rose-pine,neo-brutalism,glassmorphism,bauhaus,swiss-grid,terminal-green,xiaohongshu-white,rainbow-gradient,aurora,blueprint,memphis-pop" data-theme-base="../assets/themes/">
+<div class="deck">
+  <!-- 24 slides, one per theme. Click through; also press T to cycle the theme-link. -->
+</div>
+<script>
+/* build slides dynamically so we don't hand-write 24 copies */
+(function(){
+  const themes = [
+    ['minimal-white','极简白，克制高级','Inter'],
+    ['editorial-serif','杂志风衬线，高级','Playfair'],
+    ['soft-pastel','柔和马卡龙','Inter'],
+    ['sharp-mono','锐利黑白高对比','Archivo Black'],
+    ['arctic-cool','冷色调 蓝/青/石板灰','Inter'],
+    ['sunset-warm','暖色调 橘/珊瑚/琥珀','Inter'],
+    ['catppuccin-latte','catppuccin 浅','Inter'],
+    ['catppuccin-mocha','catppuccin 深','Inter'],
+    ['dracula','Dracula 经典暗紫','Inter'],
+    ['tokyo-night','Tokyo Night 蓝夜','Inter'],
+    ['nord','Nord 北欧清冷','Inter'],
+    ['solarized-light','Solarized Light','Inter'],
+    ['gruvbox-dark','Gruvbox 温暖复古','Inter'],
+    ['rose-pine','Rose Pine 玫瑰松','Inter'],
+    ['neo-brutalism','厚描边，硬阴影，明黄','Space Grotesk'],
+    ['glassmorphism','毛玻璃质感','Inter'],
+    ['bauhaus','几何+原色','Space Grotesk'],
+    ['swiss-grid','瑞士网格，Helvetica','Helvetica'],
+    ['terminal-green','绿屏终端','JetBrains Mono'],
+    ['xiaohongshu-white','小红书白底高级感','Noto Serif SC'],
+    ['rainbow-gradient','彩虹渐变点缀','Inter'],
+    ['aurora','极光渐变','Inter'],
+    ['blueprint','蓝图工程','JetBrains Mono'],
+    ['memphis-pop','孟菲斯波普','Archivo Black']
+  ];
+  const deck = document.querySelector('.deck');
+  themes.forEach((t,i)=>{
+    const s = document.createElement('section');
+    s.className = 'slide';
+    s.setAttribute('data-title', t[0]);
+    s.innerHTML = `
+      <span class="theme-indicator">${i+1}/${themes.length} · ${t[0]}</span>
+      <p class="kicker">Theme · ${String(i+1).padStart(2,'0')}</p>
+      <h1 class="h1 anim-fade-up" data-anim="fade-up">${t[0]}</h1>
+      <p class="lede">${t[1]} · ${t[2]}</p>
+      <div class="grid g3 mt-l anim-stagger-list" data-anim-target>
+        <div class="card"><h4>Card · 卡片</h4><p class="dim">背景 / 边框 / 阴影 全部走 tokens。</p>
+          <div class="swatch"><div style="background:var(--accent)"></div><div style="background:var(--accent-2)"></div><div style="background:var(--accent-3)"></div><div style="background:var(--text-1)"></div><div style="background:var(--surface-2)"></div></div>
+        </div>
+        <div class="card"><h4>KPI</h4><div style="font-size:48px;font-weight:800" class="gradient-text">2.4K</div><p class="dim">上周月活</p></div>
+        <div class="card"><h4>Code</h4><pre class="mono" style="font-size:11px;background:var(--surface-2);padding:10px;border-radius:8px;margin:6px 0 0">:root {
+  --accent: #3b6cff;
+}</pre></div>
+      </div>
+      <div class="row mt-m" style="gap:10px;flex-wrap:wrap">
+        <span class="pill">#tokens</span>
+        <span class="pill pill-accent">primary</span>
+        <span class="pill">#radius</span>
+        <span class="pill">#shadow</span>
+      </div>
+      <div class="deck-footer"><span class="tname">theme</span><span class="slide-number" data-current="${i+1}" data-total="${themes.length}"></span></div>
+      <div class="notes">按 <b>T</b> 继续循环主题。这张 slide 的内容没有任何变化——变的只是 tokens。</div>
+    `;
+    deck.appendChild(s);
+  });
+  // activate matching theme for each slide load - we rely on T cycling + data-themes
+})();
+</script>
+<script src="../assets/runtime.js"></script>
+</body></html>

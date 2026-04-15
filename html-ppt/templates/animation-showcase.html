@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="aurora">
+<head>
+<meta charset="utf-8"><title>Animation Showcase — html-ppt</title>
+<link rel="stylesheet" href="../assets/fonts.css">
+<link rel="stylesheet" href="../assets/base.css">
+<link rel="stylesheet" id="theme-link" href="../assets/themes/aurora.css">
+<link rel="stylesheet" href="../assets/animations/animations.css">
+<style>
+.anim-box{margin:24px auto 0;width:640px;height:240px;border-radius:var(--radius-lg);background:var(--grad-soft);display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:800;color:var(--text-1);box-shadow:var(--shadow-lg);border:1px solid var(--border)}
+.anim-indicator{position:absolute;top:24px;right:40px;font-family:var(--font-mono);font-size:11px;color:var(--text-3);letter-spacing:.1em}
+</style>
+</head>
+<body>
+<div class="deck"></div>
+<script>
+const list=[
+  ['fade-up','从下向上淡入。默认的万能入场。'],
+  ['fade-down','从上向下淡入。标题行常用。'],
+  ['fade-left','从左侧水平滑入。'],
+  ['fade-right','从右侧水平滑入。'],
+  ['rise-in','带轻微模糊从下方升起。高级感入场。'],
+  ['drop-in','从上方落下。强调感。'],
+  ['zoom-pop','弹性缩放，先过 1.04 再回到 1。按钮/数字常用。'],
+  ['blur-in','去模糊聚焦。封面推荐。'],
+  ['glitch-in','故障艺术抖动入场。'],
+  ['typewriter','打字机逐字显示。'],
+  ['neon-glow','文字周期性发光。霓虹主题推荐。'],
+  ['shimmer-sweep','表面反光扫过。金属质感。'],
+  ['gradient-flow','渐变文字水平流动。'],
+  ['stagger-list','子元素错峰出现。'],
+  ['counter-up','数字从 0 tick 到目标值。KPI 必备。'],
+  ['path-draw','SVG 线条勾勒动效。'],
+  ['parallax-tilt','鼠标悬浮时 3D 倾斜。'],
+  ['card-flip-3d','卡片 Y 轴翻转。'],
+  ['cube-rotate-3d','立方体旋转入场。'],
+  ['page-turn-3d','页面翻页效果。'],
+  ['perspective-zoom','远景拉近。'],
+  ['marquee-scroll','跑马灯横向滚动。'],
+  ['kenburns','Ken Burns 缓慢推拉。图片/封面必备。'],
+  ['confetti-burst','彩纸爆炸。成就 / 结语页。'],
+  ['spotlight','聚光灯圆形揭示。'],
+  ['morph-shape','SVG 形状变形。'],
+  ['ripple-reveal','从一角涟漪展开。']
+];
+const deck=document.querySelector('.deck');
+list.forEach((a,i)=>{
+  const s=document.createElement('section');
+  s.className='slide';s.setAttribute('data-title',a[0]);
+  s.innerHTML=`
+    <span class="anim-indicator">${i+1}/${list.length}</span>
+    <p class="kicker">Animation · ${String(i+1).padStart(2,'0')}</p>
+    <h1 class="h1"><span class="gradient-text">${a[0]}</span></h1>
+    <p class="lede">${a[1]}</p>
+    <div class="anim-box anim-${a[0]}" data-anim="${a[0]}" data-anim-target>${a[0]}</div>
+    <div class="deck-footer"><span class="dim2">按 A 循环所有动效</span><span class="slide-number" data-current="${i+1}" data-total="${list.length}"></span></div>
+    <div class="notes">每次切换到这张 slide，runtime 会自动重新触发 [data-anim] 元素的入场动画。</div>
+  `;
+  deck.appendChild(s);
+});
+</script>
+<script src="../assets/runtime.js"></script>
+</body></html>
