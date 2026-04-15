@@ -59,6 +59,35 @@ All themes define the same variables: `--bg`, `--bg-soft`, `--surface`,
 | `blueprint` | 蓝图工程 + 网格底纹 + 蒙太奇字体。 | 系统架构、工程蓝图 |
 | `terminal-green` | 绿屏终端 + 等宽 + 发光文字。 | CLI/black-hat/复古朋克 |
 
+## v2 additions
+
+### Light & professional
+
+| name | description | when to use |
+|---|---|---|
+| `corporate-clean` | 纯白 + 海军蓝 accent + Inter + 保守边框。 | 董事会汇报、B2B 销售、金融保险 |
+| `pitch-deck-vc` | YC 风白底 + 蓝紫渐变 accent + 大留白。 | 融资路演、种子轮、VC meeting |
+| `academic-paper` | 论文白 + 衬线正文 + 黑墨 + 蓝链接。 | 学术报告、研究分享、会议论文 |
+| `japanese-minimal` | 象牙白 + 朱红 accent + 极大留白 + Noto Serif。 | 品牌升级、匠人故事、禅意叙事 |
+| `engineering-whiteprint` | 白底 + 坐标纸网格 + 海军墨线 + 等宽字。 | 系统设计、API 文档、架构白皮书 |
+
+### Bold & editorial
+
+| name | description | when to use |
+|---|---|---|
+| `magazine-bold` | 奶油底 + 超大 Playfair 衬线 + 橙色 spot。 | 专栏文章、封面故事、品牌月刊 |
+| `news-broadcast` | 白底 + 红色竖条 + Oswald 大写 + 硬阴影。 | 突发新闻、发布通稿、数据播报 |
+| `midcentury` | 奶油底 + 芥末/青/焦橙 + 锐利几何。 | 设计史、家居美学、复古品牌 |
+| `retro-tv` | 暖奶油 + CRT 扫描线 + 琥珀橙 accent。 | 怀旧叙事、八零九零年代主题 |
+
+### Effect-heavy / dramatic
+
+| name | description | when to use |
+|---|---|---|
+| `cyberpunk-neon` | 纯黑 + 霓虹粉青黄 + 发光 + JetBrains Mono。 | 黑客、地下文化、赛博 talk |
+| `vaporwave` | 深紫 + 粉红青蓝渐变 + 晕染光斑。 | 音乐、潮流艺术、A E S T H E T I C |
+| `y2k-chrome` | 银铬渐变 + 彩虹 accent + 大圆角 + Space Grotesk。 | 千禧怀旧、时尚品牌、Gen-Z |
+
 ## How to apply
 
 ```html

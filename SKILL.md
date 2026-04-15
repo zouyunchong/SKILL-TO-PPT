@@ -10,11 +10,14 @@ look. One layout file = one page type. One animation class = one entry effect.
 All pages share a token-based design system in `assets/base.css`.
 
 Tell the user this skill gives them:
-- **24 themes** (`assets/themes/*.css`) from minimal-white to aurora
+- **36 themes** (`assets/themes/*.css`) — 24 v1 + 12 v2 (cyberpunk-neon, y2k-chrome, retro-tv, japanese-minimal, vaporwave, midcentury, corporate-clean, academic-paper, news-broadcast, pitch-deck-vc, magazine-bold, engineering-whiteprint)
+- **14 full-deck templates** (`templates/full-decks/<name>/`) — complete multi-slide decks with scoped `.tpl-<name>` CSS. 8 extracted from real-world decks, 6 generic scenario scaffolds (pitch-deck, product-launch, tech-sharing, weekly-report, xhs-post 3:4, course-module).
 - **30 layouts** (`templates/single-page/*.html`) with realistic demo data
-- **25 named animations** (`assets/animations/animations.css`) applied via `data-anim`
+- **25 named CSS animations** (`assets/animations/animations.css`) via `data-anim`
+- **20 canvas FX animations** (`assets/animations/fx/*.js`) via `data-fx` — particle-burst, confetti-cannon, firework, starfield, matrix-rain, knowledge-graph (force-directed), neural-net (pulses), constellation, orbit-ring, galaxy-swirl, word-cascade, letter-explode, chain-react, magnetic-field, data-stream, gradient-blob, sparkle-trail, shockwave, typewriter-multi, counter-explosion
 - **Keyboard runtime** (`assets/runtime.js`) — arrows, T (theme), A (anim), F/S/O
-- **Showcase decks** for theme / layout / animation catalogs
+- **FX runtime** (`assets/animations/fx-runtime.js`) — auto-inits `[data-fx]` on slide enter, cleans up on leave
+- **Showcase decks** for themes / layouts / animations / full-decks gallery
 - **Headless Chrome render script** for PNG export
 
 ## When to use
@@ -39,7 +42,13 @@ text/notes into a presentable deck. Prefer this over building from scratch.
    Catalog in [references/layouts.md](references/layouts.md).
 4. **Add animations.** Put `data-anim="fade-up"` (or `class="anim-fade-up"`) on
    any element. On `<ul>`/grids, use `anim-stagger-list` for sequenced reveals.
+   For canvas FX, use `<div data-fx="knowledge-graph">...</div>` and include
+   `<script src="../assets/animations/fx-runtime.js"></script>`.
    Catalog in [references/animations.md](references/animations.md).
+5. **Use a full-deck template.** Copy `templates/full-decks/<name>/` into
+   `examples/my-talk/` as a starting point. Each folder is self-contained with
+   scoped CSS. Catalog in [references/full-decks.md](references/full-decks.md)
+   and gallery at `templates/full-decks-index.html`.
 5. **Render to PNG.**
    ```bash
    ./scripts/render.sh templates/theme-showcase.html       # one shot
@@ -73,9 +82,10 @@ Chinese + English deck, and how to export.
 
 ## Catalogs (load when needed)
 
-- [references/themes.md](references/themes.md) — all 24 themes with when-to-use.
+- [references/themes.md](references/themes.md) — all 36 themes with when-to-use.
 - [references/layouts.md](references/layouts.md) — all 30 layout types.
-- [references/animations.md](references/animations.md) — all 25 animations.
+- [references/animations.md](references/animations.md) — 25 CSS + 20 canvas FX animations.
+- [references/full-decks.md](references/full-decks.md) — all 14 full-deck templates.
 - [references/authoring-guide.md](references/authoring-guide.md) — full workflow.
 
 ## File structure
@@ -88,13 +98,18 @@ html-ppt/
 │   ├── base.css             (tokens + primitives — do not edit per deck)
 │   ├── fonts.css            (webfont imports)
 │   ├── runtime.js           (keyboard + presenter + overview + theme cycle)
-│   ├── themes/*.css         (24 token overrides, one per theme)
-│   └── animations/animations.css (25 named entry animations)
+│   ├── themes/*.css         (36 token overrides, one per theme)
+│   └── animations/
+│       ├── animations.css   (25 named CSS entry animations)
+│       ├── fx-runtime.js    (auto-init [data-fx] on slide enter)
+│       └── fx/*.js          (20 canvas FX modules: particles/graph/fireworks…)
 ├── templates/
 │   ├── deck.html                  (minimal 6-slide starter)
-│   ├── theme-showcase.html        (24 slides, one per theme)
+│   ├── theme-showcase.html        (36 slides, iframe-isolated per theme)
 │   ├── layout-showcase.html       (iframe tour of all 30 layouts)
-│   ├── animation-showcase.html    (27 slides, one per animation)
+│   ├── animation-showcase.html    (20 FX + 27 CSS animation slides)
+│   ├── full-decks-index.html      (gallery of all 14 full-deck templates)
+│   ├── full-decks/<name>/         (14 scoped multi-slide deck templates)
 │   └── single-page/*.html         (30 layout files with demo data)
 ├── scripts/
 │   ├── new-deck.sh                (scaffold a deck from deck.html)

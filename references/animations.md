@@ -91,3 +91,57 @@ All animations are disabled automatically when
   messy.
 - Stagger lists + a single hero entry = clean rhythm.
 - For counter-up, pair with `stat-highlight.html` or `kpi-grid.html`.
+
+## FX (canvas)
+
+CSS animations are fire-and-forget entry effects. **FX** are live, continuously
+running canvas/DOM effects that start when their slide becomes active and stop
+when it leaves. They are loaded by `assets/animations/fx-runtime.js`, which
+dynamically pulls every module under `assets/animations/fx/*.js` and watches
+`.slide.is-active` to run lifecycle.
+
+Add to any page:
+```html
+<script src="../assets/animations/fx-runtime.js"></script>
+```
+
+Then drop one of these into any slide:
+```html
+<div data-fx="particle-burst" style="width:100%;height:360px;"></div>
+```
+
+The container just needs a size — the FX auto-sizes a canvas to fit with
+`ResizeObserver` + DPR correction. Colors read your theme (`--accent`,
+`--accent-2`, `--ok`, `--warn`, `--danger`).
+
+| name | effect | use case | trigger |
+|---|---|---|---|
+| `particle-burst` | Particles explode from center, gravity + fade, re-bursts every 2.5s. | Reveal moments, stat pages. | `<div data-fx="particle-burst">` |
+| `confetti-cannon` | Colored rotating rects arcing from both bottom corners. | Thank you / success pages. | `<div data-fx="confetti-cannon">` |
+| `firework` | Rockets from bottom explode into colored sparks, continuous. | Celebration, launch slides. | `<div data-fx="firework">` |
+| `starfield` | 3D perspective starfield flying outward. | Sci-fi / deep space backgrounds. | `<div data-fx="starfield">` |
+| `matrix-rain` | Falling green katakana + hex columns. | Cyber / security / data theme. | `<div data-fx="matrix-rain">` |
+| `knowledge-graph` | Force-directed graph, 28 labeled nodes, ~50 edges, live physics. | Knowledge / RAG / graph slides. | `<div data-fx="knowledge-graph">` |
+| `neural-net` | 4-6-6-3 feedforward net with pulses traveling along edges. | ML / model architecture slides. | `<div data-fx="neural-net">` |
+| `constellation` | Drifting points, linked when within 150 px, opacity by distance. | Ambient hero backgrounds. | `<div data-fx="constellation">` |
+| `orbit-ring` | 5 concentric rings with dots at different speeds, radial glow. | System / planet / layered concepts. | `<div data-fx="orbit-ring">` |
+| `galaxy-swirl` | Logarithmic spiral of ~800 particles, slow rotation. | Cover pages, intros. | `<div data-fx="galaxy-swirl">` |
+| `word-cascade` | Words fall from top, pile up at bottom. | Vocabulary / concept cloud slides. | `<div data-fx="word-cascade">` |
+| `letter-explode` | Heading letters fly in from random directions, loops every ~4.5s. | Big titles, hero text. | `<div data-fx="letter-explode" data-fx-text-value="EXPLODE">` |
+| `chain-react` | 8 circles with a domino pulse wave traveling across. | Pipeline / sequential flow. | `<div data-fx="chain-react">` |
+| `magnetic-field` | Particles travel bezier/sin curves leaving trails. | Energy / flow / abstract. | `<div data-fx="magnetic-field">` |
+| `data-stream` | Rows of scrolling hex/binary text, cyberpunk. | Data, API, security. | `<div data-fx="data-stream">` |
+| `gradient-blob` | 4 drifting blurred radial gradients (additive). | Soft hero backgrounds. | `<div data-fx="gradient-blob">` |
+| `sparkle-trail` | Pointer-driven sparkle emitter (auto-wiggles if idle). | Interactive reveal, hover canvases. | `<div data-fx="sparkle-trail">` |
+| `shockwave` | Expanding rings from center on loop. | Impact, launch, alert. | `<div data-fx="shockwave">` |
+| `typewriter-multi` | 3 lines typing concurrently with blinking block cursors (DOM). | Terminal, agent boot log. | `<div data-fx="typewriter-multi" data-fx-line1="> boot...">` |
+| `counter-explosion` | Number counts 0 → target, bursts particles, resets after 4s. | KPI reveal, record highs. | `<div data-fx="counter-explosion" data-fx-to="2400">` |
+
+FX tips:
+- One FX per slide is almost always enough. Mix with regular CSS `data-anim`
+  effects for layered polish.
+- The container needs an explicit size (height) — the canvas fills 100%.
+- Every module respects theme custom properties. Set `--accent` / `--accent-2`
+  on the slide or element to recolor on the fly.
+- Lifecycle is automatic: entering a slide starts the FX, leaving stops it and
+  frees the canvas. You can also call `window.__hpxReinit(el)` manually.
