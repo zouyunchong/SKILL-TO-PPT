@@ -113,6 +113,12 @@ Only after those are clear, scaffold the deck and start writing.
   visible; all others are hidden.
 - **Supply notes.** Wrap speaker notes in `<div class="notes">…</div>` inside
   each slide. Press S to open the overlay.
+- **NEVER put presenter-only text on the slide itself.** Descriptive text like
+  "这一页展示了……" or "Speaker: 这里可以补充……" or small explanatory captions
+  aimed at the presenter MUST go inside `<div class="notes">`, NOT as visible
+  `<p>` / `<span>` elements on the slide. The `.notes` class is `display:none`
+  by default — it only appears in the S overlay. Slides should contain ONLY
+  audience-facing content (titles, bullet points, data, charts, images).
 
 ## Writing guide
 
