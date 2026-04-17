@@ -186,22 +186,22 @@
     function buildPresenterHTML(slideData, styleSheets, total, startIdx, bodyClasses, htmlAttrs) {
       const slidesJSON = JSON.stringify(slideData);
 
-      // Build the srcdoc template for slide iframes.
-      // Each iframe gets its own viewport (1920x1080) so all CSS
-      // (vw/vh/clamp/percentage) resolves identically to the audience view.
-      // We use a placeholder %%SLIDE_HTML%% that gets replaced per-slide.
-      const iframeSrcdocTemplate = '<!DOCTYPE html>'
-        + '<html ' + htmlAttrs.replace(/"/g, '&quot;') + '>'
+      // Build iframe document template. Each iframe gets its own viewport
+      // at 1920x1080 so vw/vh/clamp all resolve exactly like the audience view.
+      // We inject via contentDocument.write() so there's ZERO HTML escaping issues.
+      // Template is a JS string (not embedded HTML attribute), so quotes stay raw.
+      const iframeDocTemplate = '<!DOCTYPE html>'
+        + '<html ' + htmlAttrs + '>'
         + '<head><meta charset="utf-8">'
-        + styleSheets.replace(/"/g, '&quot;')
+        + styleSheets
         + '<style>'
-        + 'html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden}'
+        + 'html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:var(--bg,#0d1117)}'
         + '.deck{position:relative;width:100vw;height:100vh;overflow:hidden}'
         + '.slide{position:absolute!important;inset:0!important;width:100vw!important;height:100vh!important;opacity:1!important;transform:none!important;display:block!important;overflow:hidden!important}'
         + '.notes,aside.notes,.speaker-notes{display:none!important}'
         + '.progress-bar,.notes-overlay,.overview,.deck-header,.deck-footer,.slide-number{display:none!important}'
         + '</style></head>'
-        + '<body class="' + bodyClasses.replace(/"/g, '&quot;') + '">'
+        + '<body class="' + bodyClasses + '">'
         + '<div class="deck">%%SLIDE_HTML%%</div>'
         + '</body></html>';
 
@@ -267,7 +267,7 @@
 + '  var total = ' + total + ';\n'
 + '  var idx = ' + startIdx + ';\n'
 + '  var CHANNEL_NAME = ' + JSON.stringify(CHANNEL_NAME) + ';\n'
-+ '  var SRCDOC_TPL = ' + JSON.stringify(iframeSrcdocTemplate) + ';\n'
++ '  var DOC_TPL = ' + JSON.stringify(iframeDocTemplate) + ';\n'
 + '  var bc; try { bc = new BroadcastChannel(CHANNEL_NAME); } catch(e) {}\n'
 + '\n'
 + '  var iframeCur = document.getElementById("iframe-cur");\n'
@@ -291,9 +291,12 @@
 + '    return Math.min(cw / 1920, ch / 1080);\n'
 + '  }\n'
 + '\n'
-+ '  function setIframeSrcdoc(iframe, slideHTML) {\n'
-+ '    var doc = SRCDOC_TPL.replace("%%SLIDE_HTML%%", slideHTML);\n'
-+ '    iframe.srcdoc = doc;\n'
++ '  function renderIframe(iframe, slideHTML) {\n'
++ '    var doc = DOC_TPL.replace("%%SLIDE_HTML%%", slideHTML);\n'
++ '    try {\n'
++ '      var d = iframe.contentDocument || iframe.contentWindow.document;\n'
++ '      d.open(); d.write(doc); d.close();\n'
++ '    } catch(e) { console.error("presenter iframe render failed", e); }\n'
 + '  }\n'
 + '\n'
 + '  var endEl = null;\n'
@@ -301,12 +304,12 @@
 + '    n = Math.max(0, Math.min(total - 1, n));\n'
 + '    idx = n;\n'
 + '    /* Current slide — render in iframe */\n'
-+ '    setIframeSrcdoc(iframeCur, slideData[n].html);\n'
++ '    renderIframe(iframeCur, slideData[n].html);\n'
 + '    /* Next slide */\n'
 + '    if (n + 1 < total) {\n'
 + '      iframeNxt.style.display = "";\n'
 + '      if (endEl) { endEl.remove(); endEl = null; }\n'
-+ '      setIframeSrcdoc(iframeNxt, slideData[n + 1].html);\n'
++ '      renderIframe(iframeNxt, slideData[n + 1].html);\n'
 + '    } else {\n'
 + '      iframeNxt.style.display = "none";\n'
 + '      if (!endEl) {\n'
@@ -352,7 +355,15 @@
 + '  });\n'
 + '\n'
 + '  window.addEventListener("resize", reScale);\n'
-+ '  setTimeout(function(){ update(idx); }, 100);\n'
++ '  /* Wait for iframes to be ready, then render */\n'
++ '  function initWhenReady() {\n'
++ '    if (iframeCur.contentDocument && iframeNxt.contentDocument) {\n'
++ '      update(idx);\n'
++ '    } else {\n'
++ '      setTimeout(initWhenReady, 50);\n'
++ '    }\n'
++ '  }\n'
++ '  setTimeout(initWhenReady, 50);\n'
 + '})();\n'
 + '</' + 'script>\n'
 + '</body></html>';
