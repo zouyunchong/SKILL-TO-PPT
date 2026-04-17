@@ -43,9 +43,12 @@ See [references/presenter-mode.md](references/presenter-mode.md) for the full au
 2. **每页 150–300 字** — 2–3 分钟/页的节奏
 3. **用口语，不用书面语** — "因此"→"所以"，"该方案"→"这个方案"
 
-All full-deck templates technically support the S key presenter view (it's built into `runtime.js`), but only `presenter-mode-reveal` is designed from the ground up around the feature with proper example 逐字稿 on every slide.
+All full-deck templates support the S key presenter view (it's built into `runtime.js`). **S opens a separate popup window** — the original page stays as the audience view, and the popup shows current/next slide (CSS scale at 1920×1080 design resolution, pixel-perfect) + large speaker script + timer. The two windows sync navigation via BroadcastChannel.
 
-Keyboard in presenter mode: `S` toggle · `T` cycle theme · `← →` navigate · `R` reset timer · `Esc` close.
+Only `presenter-mode-reveal` is designed from the ground up around the feature with proper example 逐字稿 on every slide.
+
+Keyboard in presenter window: `← →` navigate (syncs audience) · `R` reset timer · `Esc` close popup.
+Keyboard in audience window: `S` open presenter · `T` cycle theme · `← →` navigate (syncs presenter) · `F` fullscreen · `O` overview.
 
 ## Before you author anything — ALWAYS ask or recommend
 
@@ -194,9 +197,9 @@ capture, runtime.js exposes `#/N` deep-links, and render.sh iterates 1..N.
 ```
 ←  →  Space  PgUp  PgDn  Home  End    navigate
 F                                       fullscreen
-S                                       presenter view (current + next + script + timer)
-N                                       quick notes drawer (bottom, legacy)
-R                                       reset timer (only in presenter view)
+S                                       open presenter window (new popup: current + next + script + timer)
+N                                       quick notes drawer (bottom overlay)
+R                                       reset timer (in presenter window)
 O                                       slide overview grid
 T                                       cycle themes (reads data-themes attr)
 A                                       cycle demo animation on current slide
