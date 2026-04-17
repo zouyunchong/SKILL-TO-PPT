@@ -66,12 +66,39 @@
       document.querySelectorAll(hideSel).forEach(el => { el.style.display = 'none'; });
       document.documentElement.setAttribute('data-preview', '1');
       document.body.setAttribute('data-preview', '1');
-      /* Listen for postMessage from parent presenter window to switch slides
-       * WITHOUT reloading — this eliminates flicker during navigation. */
+      /* Auto-detect theme base path for theme switching in preview mode */
+      function getPreviewThemeBase() {
+        const base = document.documentElement.getAttribute('data-theme-base');
+        if (base) return base;
+        const tl = document.getElementById('theme-link');
+        if (tl) {
+          const raw = tl.getAttribute('href') || '';
+          const ls = raw.lastIndexOf('/');
+          if (ls >= 0) return raw.substring(0, ls + 1);
+        }
+        return 'assets/themes/';
+      }
+      const previewThemeBase = getPreviewThemeBase();
+
+      /* Listen for postMessage from parent presenter window:
+       *  - preview-goto: switch visible slide WITHOUT reloading
+       *  - preview-theme: switch theme CSS link to match audience window */
       window.addEventListener('message', function(e) {
-        if (!e.data || e.data.type !== 'preview-goto') return;
-        const n = parseInt(e.data.idx, 10);
-        if (n >= 0 && n < slides.length) showSlide(n);
+        if (!e.data) return;
+        if (e.data.type === 'preview-goto') {
+          const n = parseInt(e.data.idx, 10);
+          if (n >= 0 && n < slides.length) showSlide(n);
+        } else if (e.data.type === 'preview-theme' && e.data.name) {
+          let link = document.getElementById('theme-link');
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'theme-link';
+            document.head.appendChild(link);
+          }
+          link.href = previewThemeBase + e.data.name + '.css';
+          document.documentElement.setAttribute('data-theme', e.data.name);
+        }
       });
       /* Signal to parent that preview iframe is ready */
       try { window.parent && window.parent.postMessage({ type: 'preview-ready' }, '*'); } catch(e) {}
@@ -175,11 +202,17 @@
       }
     }
 
-    /* ===== listen for remote navigation ===== */
+    /* ===== listen for remote navigation / theme changes ===== */
     if (bc) {
       bc.onmessage = function(e) {
-        if (e.data && e.data.type === 'go' && typeof e.data.idx === 'number') {
+        if (!e.data) return;
+        if (e.data.type === 'go' && typeof e.data.idx === 'number') {
           go(e.data.idx, true);
+        } else if (e.data.type === 'theme' && e.data.name) {
+          /* Sync theme across windows */
+          const i = themes.indexOf(e.data.name);
+          if (i >= 0) themeIdx = i;
+          applyTheme(e.data.name);
         }
       };
     }
@@ -217,7 +250,9 @@
         };
       });
 
-      const presenterHTML = buildPresenterHTML(deckUrl, slideMeta, total, idx, CHANNEL_NAME);
+      /* Capture current theme so presenter previews match the audience */
+      const currentTheme = root.getAttribute('data-theme') || (themes[themeIdx] || '');
+      const presenterHTML = buildPresenterHTML(deckUrl, slideMeta, total, idx, CHANNEL_NAME, currentTheme);
 
       presenterWin = window.open('', 'html-ppt-presenter', 'width=1280,height=820,menubar=no,toolbar=no');
       if (!presenterWin) {
@@ -229,10 +264,11 @@
       presenterWin.document.close();
     }
 
-    function buildPresenterHTML(deckUrl, slideMeta, total, startIdx, channelName) {
+    function buildPresenterHTML(deckUrl, slideMeta, total, startIdx, channelName, currentTheme) {
       const metaJSON = JSON.stringify(slideMeta);
       const deckUrlJSON = JSON.stringify(deckUrl);
       const channelJSON = JSON.stringify(channelName);
+      const themeJSON = JSON.stringify(currentTheme || '');
       const storageKey = 'html-ppt-presenter:' + location.pathname;
 
       // Build the document as a single template string for clarity
@@ -612,17 +648,24 @@
    * just toggles visibility of a different .slide — no reload, no flicker.
    */
   var iframeReady = { cur: false, nxt: false };
+  var currentTheme = ${themeJSON};
   window.addEventListener('message', function(e) {
     if (!e.data || e.data.type !== 'preview-ready') return;
+    var iframe = null;
     if (e.source === iframeCur.contentWindow) {
       iframeReady.cur = true;
+      iframe = iframeCur;
       postPreviewGoto(iframeCur, idx);
-      rescaleIframe(iframeCur);
     } else if (e.source === iframeNxt.contentWindow) {
       iframeReady.nxt = true;
+      iframe = iframeNxt;
       postPreviewGoto(iframeNxt, idx + 1 < total ? idx + 1 : idx);
-      rescaleIframe(iframeNxt);
     }
+    /* Sync current theme to the iframe */
+    if (iframe && currentTheme) {
+      try { iframe.contentWindow.postMessage({ type: 'preview-theme', name: currentTheme }, '*'); } catch(err) {}
+    }
+    if (iframe) rescaleIframe(iframe);
   });
 
   function postPreviewGoto(iframe, n) {
@@ -683,7 +726,17 @@
   /* ===== BroadcastChannel sync ===== */
   if (bc) {
     bc.onmessage = function(e){
-      if (e.data && e.data.type === 'go') update(e.data.idx);
+      if (!e.data) return;
+      if (e.data.type === 'go') update(e.data.idx);
+      else if (e.data.type === 'theme' && e.data.name) {
+        currentTheme = e.data.name;
+        /* Forward theme change to preview iframes */
+        [iframeCur, iframeNxt].forEach(function(iframe){
+          try {
+            iframe.contentWindow.postMessage({ type: 'preview-theme', name: e.data.name }, '*');
+          } catch(err) {}
+        });
+      }
     };
   }
   function go(n) {
@@ -761,10 +814,7 @@
       }
     }
 
-    function cycleTheme(){
-      if (!themes.length) return;
-      themeIdx = (themeIdx+1) % themes.length;
-      const name = themes[themeIdx];
+    function applyTheme(name) {
       let link = document.getElementById('theme-link');
       if (!link) {
         link = document.createElement('link');
@@ -776,6 +826,14 @@
       root.setAttribute('data-theme', name);
       const ind = document.querySelector('.theme-indicator');
       if (ind) ind.textContent = name;
+    }
+    function cycleTheme(fromRemote){
+      if (!themes.length) return;
+      themeIdx = (themeIdx+1) % themes.length;
+      const name = themes[themeIdx];
+      applyTheme(name);
+      /* Broadcast to other window (audience ↔ presenter) */
+      if (!fromRemote && bc) bc.postMessage({ type: 'theme', name: name });
     }
 
     // animation cycling on current slide
