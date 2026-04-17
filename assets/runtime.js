@@ -160,13 +160,18 @@
         };
       });
 
-      // Collect all stylesheets from current document
+      // Collect all stylesheets — use absolute URLs so popup can resolve them
       const styleSheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(el => {
         if (el.tagName === 'LINK') return '<link rel="stylesheet" href="' + el.href + '">';
         return '<style>' + el.textContent + '</style>';
       }).join('\n');
 
-      const presenterHTML = buildPresenterHTML(slideData, styleSheets, total, idx);
+      // Collect body classes (e.g. tpl-presenter-mode-reveal) so scoped CSS works
+      const bodyClasses = document.body.className || '';
+      // Collect <html> attributes for theme variables
+      const htmlAttrs = Array.from(root.attributes).map(a => a.name+'="'+a.value+'"').join(' ');
+
+      const presenterHTML = buildPresenterHTML(slideData, styleSheets, total, idx, bodyClasses, htmlAttrs);
 
       presenterWin = window.open('', 'html-ppt-presenter', 'width=1200,height=800,menubar=no,toolbar=no');
       if (!presenterWin) {
@@ -178,36 +183,40 @@
       presenterWin.document.close();
     }
 
-    function buildPresenterHTML(slideData, styleSheets, total, startIdx) {
-      // Escape backticks and ${ in slide HTML for template literal safety
+    function buildPresenterHTML(slideData, styleSheets, total, startIdx, bodyClasses, htmlAttrs) {
       const slidesJSON = JSON.stringify(slideData);
 
       return '<!DOCTYPE html>\n'
-+ '<html lang="zh-CN">\n<head>\n<meta charset="utf-8">\n'
++ '<html ' + htmlAttrs + '>\n<head>\n<meta charset="utf-8">\n'
 + '<title>Presenter View</title>\n'
 + styleSheets + '\n'
 + '<style>\n'
-+ '  * { margin: 0; padding: 0; box-sizing: border-box; }\n'
-+ '  html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0d0d; color: #e6edf3; font-family: "Noto Sans SC", -apple-system, sans-serif; }\n'
-+ '  .pv-grid { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr auto; height: 100vh; gap: 12px; padding: 12px; }\n'
+/* ===== Presenter-only layout (overrides everything from host CSS) ===== */
++ '  .pv-grid, .pv-grid * { box-sizing: border-box; }\n'
++ '  body.pv-body { width: 100% !important; height: 100% !important; overflow: hidden !important; background: #0d0d0d !important; color: #e6edf3 !important; margin: 0 !important; padding: 0 !important; }\n'
++ '  .pv-grid { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr auto; height: 100vh; gap: 12px; padding: 12px; position: relative; z-index: 1; }\n'
 + '  .pv-current-wrap { grid-row: 1; grid-column: 1; display: flex; flex-direction: column; min-height: 0; }\n'
 + '  .pv-right { grid-row: 1; grid-column: 2; display: flex; flex-direction: column; gap: 10px; min-height: 0; }\n'
 + '  .pv-bar { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 8px 16px; background: rgba(255,255,255,.04); border-radius: 8px; font-size: 13px; }\n'
 + '  .pv-label { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #6e7681; font-weight: 700; margin-bottom: 6px; padding-left: 2px; flex-shrink: 0; }\n'
 + '\n'
-+ '  /* Slide stage: fixed aspect ratio container with CSS scale */\n'
+/* ===== Slide stage: 16:9 container at design res, then CSS scale ===== */
 + '  .pv-stage { flex: 1; position: relative; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; background: var(--bg, #0d1117); min-height: 0; }\n'
-+ '  .pv-stage-inner { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: top left; pointer-events: none; }\n'
-+ '  .pv-stage-inner .slide { position: absolute; inset: 0; opacity: 1 !important; transform: none !important; display: block !important; }\n'
-+ '  .pv-stage-inner .slide .notes, .pv-stage-inner .slide aside.notes, .pv-stage-inner .slide .speaker-notes { display: none !important; }\n'
++ '  .pv-stage-inner { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: top left; pointer-events: none; overflow: hidden; }\n'
+/* The .deck wrapper gives slides the same context as the audience view */
++ '  .pv-stage-inner .deck { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; overflow: hidden; }\n'
++ '  .pv-stage-inner .deck .slide { position: absolute !important; inset: 0 !important; width: 1920px !important; height: 1080px !important; opacity: 1 !important; transform: none !important; display: block !important; overflow: hidden !important; }\n'
++ '  .pv-stage-inner .deck .slide .notes, .pv-stage-inner .deck .slide aside.notes, .pv-stage-inner .deck .slide .speaker-notes { display: none !important; }\n'
+/* Hide runtime chrome inside preview clones */
++ '  .pv-stage-inner .deck .progress-bar, .pv-stage-inner .deck .notes-overlay, .pv-stage-inner .deck .overview, .pv-stage-inner .deck .deck-header, .pv-stage-inner .deck .deck-footer { display: none !important; }\n'
 + '\n'
 + '  .pv-next-wrap { flex: 0 0 35%; display: flex; flex-direction: column; min-height: 0; }\n'
-+ '  .pv-next-stage { opacity: .8; }\n'
-+ '  .pv-next-end { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 16px; color: #484f58; letter-spacing: .1em; }\n'
++ '  .pv-next-stage { opacity: .85; }\n'
++ '  .pv-next-end { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 16px; color: #484f58; letter-spacing: .1em; position: absolute; inset: 0; }\n'
 + '\n'
-+ '  /* Notes panel */\n'
+/* ===== Notes panel ===== */
 + '  .pv-notes { flex: 1; display: flex; flex-direction: column; min-height: 0; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 12px 16px; }\n'
-+ '  .pv-notes-body { flex: 1; overflow-y: auto; font-size: 18px; line-height: 1.75; color: #d0d7de; }\n'
++ '  .pv-notes-body { flex: 1; overflow-y: auto; font-size: 18px; line-height: 1.75; color: #d0d7de; font-family: "Noto Sans SC", -apple-system, sans-serif; }\n'
 + '  .pv-notes-body p { margin: 0 0 .7em 0; }\n'
 + '  .pv-notes-body strong { color: #f0883e; }\n'
 + '  .pv-notes-body em { color: #58a6ff; font-style: normal; }\n'
@@ -219,7 +228,7 @@
 + '  .pv-title { color: #8b949e; font-size: 13px; flex: 1; text-align: right; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }\n'
 + '  .pv-hint { font-size: 11px; color: #484f58; margin-left: auto; }\n'
 + '</style>\n'
-+ '</head>\n<body>\n'
++ '</head>\n<body class="pv-body ' + bodyClasses + '">\n'
 + '<div class="pv-grid">\n'
 + '  <div class="pv-current-wrap">\n'
 + '    <div class="pv-label">CURRENT</div>\n'
@@ -239,7 +248,7 @@
 + '    <div class="pv-timer" id="pv-timer">00:00</div>\n'
 + '    <div class="pv-count" id="pv-count">1 / ' + total + '</div>\n'
 + '    <div class="pv-title" id="pv-title"></div>\n'
-+ '    <div class="pv-hint">← → 翻页 · R 重置计时 · T 主题 · Esc 关闭</div>\n'
++ '    <div class="pv-hint">← → 翻页 · R 重置计时 · Esc 关闭</div>\n'
 + '  </div>\n'
 + '</div>\n'
 + '<script>\n'
@@ -271,18 +280,11 @@
 + '    return Math.min(cw / 1920, ch / 1080);\n'
 + '  }\n'
 + '\n'
++ '  /* Render a slide inside a proper .deck wrapper at 1920x1080 */\n'
 + '  function renderSlide(container, html) {\n'
-+ '    container.innerHTML = html;\n'
-+ '    /* Force the slide visible */\n'
++ '    container.innerHTML = "<div class=\\"deck\\">" + html + "</div>";\n'
 + '    var sl = container.querySelector(".slide");\n'
-+ '    if (sl) {\n'
-+ '      sl.style.position = "absolute";\n'
-+ '      sl.style.inset = "0";\n'
-+ '      sl.style.opacity = "1";\n'
-+ '      sl.style.transform = "none";\n'
-+ '      sl.style.display = "block";\n'
-+ '      sl.classList.add("is-active");\n'
-+ '    }\n'
++ '    if (sl) { sl.classList.add("is-active"); }\n'
 + '  }\n'
 + '\n'
 + '  function update(n) {\n'
@@ -291,13 +293,14 @@
 + '    /* Current slide */\n'
 + '    renderSlide(curInner, slideData[n].html);\n'
 + '    /* Next slide */\n'
++ '    var existingEnd = nxtInner.parentElement.querySelector(".pv-next-end");\n'
 + '    if (n + 1 < total) {\n'
-+ '      nxtInner.parentElement.querySelector(".pv-next-end") && nxtInner.parentElement.querySelector(".pv-next-end").remove();\n'
++ '      if (existingEnd) existingEnd.remove();\n'
 + '      nxtInner.style.display = "";\n'
 + '      renderSlide(nxtInner, slideData[n + 1].html);\n'
 + '    } else {\n'
 + '      nxtInner.style.display = "none";\n'
-+ '      if (!nxtInner.parentElement.querySelector(".pv-next-end")) {\n'
++ '      if (!existingEnd) {\n'
 + '        var end = document.createElement("div");\n'
 + '        end.className = "pv-next-end";\n'
 + '        end.textContent = "— END —";\n'
@@ -344,7 +347,7 @@
 + '\n'
 + '  window.addEventListener("resize", reScale);\n'
 + '  /* Initial render */\n'
-+ '  setTimeout(function(){ update(idx); }, 50);\n'
++ '  setTimeout(function(){ update(idx); }, 100);\n'
 + '})();\n'
 + '</' + 'script>\n'
 + '</body></html>';
@@ -360,6 +363,21 @@
     const themesAttr = root.getAttribute('data-themes') || document.body.getAttribute('data-themes');
     const themes = themesAttr ? themesAttr.split(',').map(s=>s.trim()).filter(Boolean) : [];
     let themeIdx = 0;
+
+    // Auto-detect theme base path from existing <link id="theme-link">
+    let themeBase = root.getAttribute('data-theme-base');
+    if (!themeBase) {
+      const existingLink = document.getElementById('theme-link');
+      if (existingLink) {
+        // el.getAttribute('href') gives the raw relative path written in HTML
+        const rawHref = existingLink.getAttribute('href') || '';
+        const lastSlash = rawHref.lastIndexOf('/');
+        themeBase = lastSlash >= 0 ? rawHref.substring(0, lastSlash + 1) : 'assets/themes/';
+      } else {
+        themeBase = 'assets/themes/';
+      }
+    }
+
     function cycleTheme(){
       if (!themes.length) return;
       themeIdx = (themeIdx+1) % themes.length;
@@ -371,8 +389,7 @@
         link.id = 'theme-link';
         document.head.appendChild(link);
       }
-      const themePath = (root.getAttribute('data-theme-base') || 'assets/themes/') + name + '.css';
-      link.href = themePath;
+      link.href = themeBase + name + '.css';
       root.setAttribute('data-theme', name);
       const ind = document.querySelector('.theme-indicator');
       if (ind) ind.textContent = name;
