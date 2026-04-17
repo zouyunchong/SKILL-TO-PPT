@@ -25,22 +25,59 @@
 
   function ready(fn){ if(document.readyState!='loading')fn(); else document.addEventListener('DOMContentLoaded',fn);}
 
+  /* ========== Parse URL for preview-only mode ==========
+   * When loaded as iframe.src = "index.html?preview=3", runtime enters a
+   * locked single-slide mode: only slide N is visible, no chrome, no keys,
+   * no hash updates. This is how the presenter window shows pixel-perfect
+   * previews — by loading the actual deck file in an iframe and telling it
+   * to display only a specific slide.
+   */
+  function getPreviewIdx() {
+    const m = /[?&]preview=(\d+)/.exec(location.search || '');
+    return m ? parseInt(m[1], 10) - 1 : -1;
+  }
+
   ready(function () {
     const deck = document.querySelector('.deck');
     if (!deck) return;
     const slides = Array.from(deck.querySelectorAll('.slide'));
     if (!slides.length) return;
 
+    const previewOnlyIdx = getPreviewIdx();
+    const isPreviewMode = previewOnlyIdx >= 0 && previewOnlyIdx < slides.length;
+
+    /* ===== Preview-only mode: show one slide, hide everything else ===== */
+    if (isPreviewMode) {
+      slides.forEach((s, i) => {
+        s.classList.toggle('is-active', i === previewOnlyIdx);
+        if (i !== previewOnlyIdx) {
+          s.style.display = 'none';
+        } else {
+          s.style.opacity = '1';
+          s.style.transform = 'none';
+          s.style.pointerEvents = 'auto';
+        }
+      });
+      /* Hide chrome that the presenter shouldn't see in preview */
+      const hideSel = '.progress-bar, .notes-overlay, .overview, .notes, aside.notes, .speaker-notes';
+      document.querySelectorAll(hideSel).forEach(el => { el.style.display = 'none'; });
+      /* Also add a data attr so templates can style preview mode if needed */
+      document.documentElement.setAttribute('data-preview', '1');
+      document.body.setAttribute('data-preview', '1');
+      /* Don't register key handlers, don't start broadcast channel, don't auto-hash */
+      return;
+    }
+
     let idx = 0;
     const total = slides.length;
 
     /* ===== BroadcastChannel for presenter sync ===== */
-    const CHANNEL_NAME = 'html-ppt-presenter-' + (location.pathname + location.search);
+    const CHANNEL_NAME = 'html-ppt-presenter-' + location.pathname;
     let bc;
     try { bc = new BroadcastChannel(CHANNEL_NAME); } catch(e) { bc = null; }
 
-    // Are we running inside the presenter popup?
-    const isPresenterWindow = location.hash.indexOf('__presenter__') !== -1;
+    // Are we running inside the presenter popup? (legacy flag, now unused)
+    const isPresenterWindow = false;
 
     /* ===== progress bar ===== */
     let bar = document.querySelector('.progress-bar');
@@ -140,7 +177,15 @@
     function toggleNotes(force){ notes.classList.toggle('open', force!==undefined?force:!notes.classList.contains('open')); }
     function toggleOverview(force){ overview.classList.toggle('open', force!==undefined?force:!overview.classList.contains('open')); }
 
-    /* ========== PRESENTER MODE (new window) ========== */
+    /* ========== PRESENTER MODE — Magnetic-card popup window ========== */
+    /* Opens a new window with 4 draggable, resizable cards:
+     *   CURRENT  — iframe(?preview=N)   pixel-perfect preview of current slide
+     *   NEXT     — iframe(?preview=N+1) pixel-perfect preview of next slide
+     *   SCRIPT   — large speaker notes (逐字稿)
+     *   TIMER    — elapsed timer + page counter + controls
+     * Cards remember position/size in localStorage.
+     * Two windows sync via BroadcastChannel.
+     */
     let presenterWin = null;
 
     function openPresenterWindow() {
@@ -149,31 +194,22 @@
         return;
       }
 
-      // Collect all slides' HTML and notes
-      const slideData = slides.map((s, i) => {
+      // Build absolute URL of THIS deck file (without hash/query)
+      const deckUrl = location.protocol + '//' + location.host + location.pathname;
+
+      // Collect slide titles + notes (HTML strings)
+      const slideMeta = slides.map((s, i) => {
         const note = s.querySelector('.notes, aside.notes, .speaker-notes');
         return {
-          html: s.outerHTML,
-          notes: note ? note.innerHTML : '',
           title: s.getAttribute('data-title') ||
-            (s.querySelector('h1,h2,h3')||{}).textContent || ('Slide '+(i+1))
+            (s.querySelector('h1,h2,h3')||{}).textContent || ('Slide '+(i+1)),
+          notes: note ? note.innerHTML : ''
         };
       });
 
-      // Collect all stylesheets — use absolute URLs so popup can resolve them
-      const styleSheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(el => {
-        if (el.tagName === 'LINK') return '<link rel="stylesheet" href="' + el.href + '">';
-        return '<style>' + el.textContent + '</style>';
-      }).join('\n');
+      const presenterHTML = buildPresenterHTML(deckUrl, slideMeta, total, idx, CHANNEL_NAME);
 
-      // Collect body classes (e.g. tpl-presenter-mode-reveal) so scoped CSS works
-      const bodyClasses = document.body.className || '';
-      // Collect <html> attributes for theme variables
-      const htmlAttrs = Array.from(root.attributes).map(a => a.name+'="'+a.value+'"').join(' ');
-
-      const presenterHTML = buildPresenterHTML(slideData, styleSheets, total, idx, bodyClasses, htmlAttrs);
-
-      presenterWin = window.open('', 'html-ppt-presenter', 'width=1200,height=800,menubar=no,toolbar=no');
+      presenterWin = window.open('', 'html-ppt-presenter', 'width=1280,height=820,menubar=no,toolbar=no');
       if (!presenterWin) {
         alert('请允许弹出窗口以使用演讲者视图');
         return;
@@ -183,258 +219,479 @@
       presenterWin.document.close();
     }
 
-    function buildPresenterHTML(slideData, styleSheets, total, startIdx, bodyClasses, htmlAttrs) {
-      const slidesJSON = JSON.stringify(slideData);
+    function buildPresenterHTML(deckUrl, slideMeta, total, startIdx, channelName) {
+      const metaJSON = JSON.stringify(slideMeta);
+      const deckUrlJSON = JSON.stringify(deckUrl);
+      const channelJSON = JSON.stringify(channelName);
+      const storageKey = 'html-ppt-presenter:' + location.pathname;
 
-      // Build iframe document template. Each iframe gets its own viewport
-      // at 1920x1080 so vw/vh/clamp all resolve exactly like the audience view.
-      // We inject via contentDocument.write() so there's ZERO HTML escaping issues.
-      // Template is a JS string (not embedded HTML attribute), so quotes stay raw.
-      // IMPORTANT: Do NOT override .slide or .deck styling. The original
-      // base.css + theme + scoped CSS handles flex centering, padding, etc.
-      // We only: (1) reset margins, (2) force the single slide to be visible
-      // (.is-active), (3) hide the speaker notes and runtime chrome.
-      const iframeDocTemplate = '<!DOCTYPE html>'
-        + '<html ' + htmlAttrs + '>'
-        + '<head><meta charset="utf-8">'
-        + styleSheets
-        + '<style>'
-        + 'html,body{margin:0;padding:0;overflow:hidden}'
-        + '/* Keep .slide and .deck styling from host CSS untouched */'
-        + '/* But ensure the one slide we render is visible */'
-        + '.slide{opacity:1!important;transform:none!important;pointer-events:auto!important}'
-        + '/* Hide elements that should not appear in preview */'
-        + '.notes,aside.notes,.speaker-notes{display:none!important}'
-        + '.progress-bar,.notes-overlay,.overview{display:none!important}'
-        + '</style></head>'
-        + '<body class="' + bodyClasses + '">'
-        + '<div class="deck">%%SLIDE_HTML%%</div>'
-        + '</body></html>';
+      // Build the document as a single template string for clarity
+      return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Presenter View</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #1a1d24;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(88,166,255,.04), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(188,140,255,.04), transparent 50%);
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  }
+  /* Stage: positioned area where cards live */
+  #stage { position: absolute; inset: 0; overflow: hidden; }
 
-      return '<!DOCTYPE html>\n'
-+ '<html lang="zh-CN">\n<head>\n<meta charset="utf-8">\n'
-+ '<title>Presenter View</title>\n'
-+ '<style>\n'
-+ '  * { margin: 0; padding: 0; box-sizing: border-box; }\n'
-+ '  html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0d0d; color: #e6edf3; font-family: "Noto Sans SC", -apple-system, sans-serif; }\n'
-+ '  .pv-grid { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr auto; height: 100vh; gap: 12px; padding: 12px; }\n'
-+ '  .pv-current-wrap { grid-row: 1; grid-column: 1; display: flex; flex-direction: column; min-height: 0; }\n'
-+ '  .pv-right { grid-row: 1; grid-column: 2; display: flex; flex-direction: column; gap: 10px; min-height: 0; }\n'
-+ '  .pv-bar { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 8px 16px; background: rgba(255,255,255,.04); border-radius: 8px; font-size: 13px; }\n'
-+ '  .pv-label { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #6e7681; font-weight: 700; margin-bottom: 6px; padding-left: 2px; flex-shrink: 0; }\n'
-+ '\n'
-+ '  /* Slide preview: iframe at 1920x1080 scaled to fit container */\n'
-+ '  .pv-stage { flex: 1; position: relative; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; background: #0d1117; min-height: 0; }\n'
-+ '  .pv-stage iframe { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: top left; border: none; pointer-events: none; }\n'
-+ '\n'
-+ '  .pv-next-wrap { flex: 0 0 35%; display: flex; flex-direction: column; min-height: 0; }\n'
-+ '  .pv-next-stage { opacity: .85; }\n'
-+ '  .pv-next-end { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #484f58; letter-spacing: .1em; }\n'
-+ '\n'
-+ '  .pv-notes { flex: 1; display: flex; flex-direction: column; min-height: 0; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 12px 16px; }\n'
-+ '  .pv-notes-body { flex: 1; overflow-y: auto; font-size: 18px; line-height: 1.75; color: #d0d7de; font-family: "Noto Sans SC", -apple-system, sans-serif; }\n'
-+ '  .pv-notes-body p { margin: 0 0 .7em 0; }\n'
-+ '  .pv-notes-body strong { color: #f0883e; }\n'
-+ '  .pv-notes-body em { color: #58a6ff; font-style: normal; }\n'
-+ '  .pv-notes-body code { font-family: monospace; font-size: .9em; background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 4px; }\n'
-+ '  .pv-empty { color: #484f58; font-style: italic; }\n'
-+ '\n'
-+ '  .pv-timer { font-family: "SF Mono","JetBrains Mono",monospace; font-size: 26px; font-weight: 700; color: #3fb950; letter-spacing: .04em; }\n'
-+ '  .pv-count { font-weight: 600; color: #e6edf3; font-size: 15px; }\n'
-+ '  .pv-title { color: #8b949e; font-size: 13px; flex: 1; text-align: right; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }\n'
-+ '  .pv-hint { font-size: 11px; color: #484f58; margin-left: auto; }\n'
-+ '</style>\n'
-+ '</head>\n<body>\n'
-+ '<div class="pv-main">\n'
-+ '  <div class="pv-left" id="pv-left" style="flex:1.4 1 0">\n'
-+ '    <div class="pv-label">CURRENT</div>\n'
-+ '    <div class="pv-stage" id="pv-current"><iframe id="iframe-cur"></iframe></div>\n'
-+ '  </div>\n'
-+ '  <div class="pv-hsplit" id="pv-hsplit" title="拖动调整左右宽度"></div>\n'
-+ '  <div class="pv-right" id="pv-right" style="flex:1 1 0">\n'
-+ '    <div class="pv-next-wrap" id="pv-next-wrap" style="flex:0 0 38%">\n'
-+ '      <div class="pv-label">NEXT</div>\n'
-+ '      <div class="pv-stage pv-next-stage" id="pv-next"><iframe id="iframe-nxt"></iframe></div>\n'
-+ '    </div>\n'
-+ '    <div class="pv-vsplit" id="pv-vsplit" title="拖动调整上下高度"></div>\n'
-+ '    <div class="pv-notes" id="pv-notes-wrap" style="flex:1 1 0">\n'
-+ '      <div class="pv-label">SPEAKER SCRIPT · 逐字稿</div>\n'
-+ '      <div class="pv-notes-body" id="pv-notes"></div>\n'
-+ '    </div>\n'
-+ '  </div>\n'
-+ '</div>\n'
-+ '<div class="pv-bar">\n'
-+ '  <div class="pv-timer" id="pv-timer">00:00</div>\n'
-+ '  <div class="pv-count" id="pv-count">1 / ' + total + '</div>\n'
-+ '  <div class="pv-title" id="pv-title"></div>\n'
-+ '  <div class="pv-hint">← → 翻页 · R 重置计时 · 拖动分隔线调整区域 · Esc 关闭</div>\n'
-+ '</div>\n'
-+ '<script>\n'
-+ '(function(){\n'
-+ '  var slideData = ' + slidesJSON + ';\n'
-+ '  var total = ' + total + ';\n'
-+ '  var idx = ' + startIdx + ';\n'
-+ '  var CHANNEL_NAME = ' + JSON.stringify(CHANNEL_NAME) + ';\n'
-+ '  var DOC_TPL = ' + JSON.stringify(iframeDocTemplate) + ';\n'
-+ '  var bc; try { bc = new BroadcastChannel(CHANNEL_NAME); } catch(e) {}\n'
-+ '\n'
-+ '  var iframeCur = document.getElementById("iframe-cur");\n'
-+ '  var iframeNxt = document.getElementById("iframe-nxt");\n'
-+ '  var pvNotes = document.getElementById("pv-notes");\n'
-+ '  var pvCount = document.getElementById("pv-count");\n'
-+ '  var pvTitle = document.getElementById("pv-title");\n'
-+ '  var pvTimer = document.getElementById("pv-timer");\n'
-+ '\n'
-+ '  /* Timer */\n'
-+ '  var timerStart = Date.now();\n'
-+ '  setInterval(function(){\n'
-+ '    var s = Math.floor((Date.now() - timerStart) / 1000);\n'
-+ '    pvTimer.textContent = String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");\n'
-+ '  }, 1000);\n'
-+ '\n'
-+ '  /* Scale iframe (1920x1080) to fit its container */\n'
-+ '  function fitScale(container) {\n'
-+ '    var cw = container.clientWidth, ch = container.clientHeight;\n'
-+ '    if (!cw || !ch) return 0.3;\n'
-+ '    return Math.min(cw / 1920, ch / 1080);\n'
-+ '  }\n'
-+ '\n'
-+ '  function renderIframe(iframe, slideHTML) {\n'
-+ '    var doc = DOC_TPL.replace("%%SLIDE_HTML%%", slideHTML);\n'
-+ '    try {\n'
-+ '      var d = iframe.contentDocument || iframe.contentWindow.document;\n'
-+ '      d.open(); d.write(doc); d.close();\n'
-+ '    } catch(e) { console.error("presenter iframe render failed", e); }\n'
-+ '  }\n'
-+ '\n'
-+ '  var endEl = null;\n'
-+ '  function update(n) {\n'
-+ '    n = Math.max(0, Math.min(total - 1, n));\n'
-+ '    idx = n;\n'
-+ '    /* Current slide — render in iframe */\n'
-+ '    renderIframe(iframeCur, slideData[n].html);\n'
-+ '    /* Next slide */\n'
-+ '    if (n + 1 < total) {\n'
-+ '      iframeNxt.style.display = "";\n'
-+ '      if (endEl) { endEl.remove(); endEl = null; }\n'
-+ '      renderIframe(iframeNxt, slideData[n + 1].html);\n'
-+ '    } else {\n'
-+ '      iframeNxt.style.display = "none";\n'
-+ '      if (!endEl) {\n'
-+ '        endEl = document.createElement("div");\n'
-+ '        endEl.className = "pv-next-end";\n'
-+ '        endEl.textContent = "— END —";\n'
-+ '        document.getElementById("pv-next").appendChild(endEl);\n'
-+ '      }\n'
-+ '    }\n'
-+ '    /* Notes */\n'
-+ '    pvNotes.innerHTML = slideData[n].notes || "<span class=\\"pv-empty\\">（这一页还没有逐字稿）</span>";\n'
-+ '    pvCount.textContent = (n + 1) + " / " + total;\n'
-+ '    pvTitle.textContent = slideData[n].title;\n'
-+ '    reScale();\n'
-+ '  }\n'
-+ '\n'
-+ '  function reScale() {\n'
-+ '    var cs = fitScale(document.getElementById("pv-current"));\n'
-+ '    iframeCur.style.transform = "scale(" + cs + ")";\n'
-+ '    var ns = fitScale(document.getElementById("pv-next"));\n'
-+ '    iframeNxt.style.transform = "scale(" + ns + ")";\n'
-+ '  }\n'
-+ '\n'
-+ '  if (bc) {\n'
-+ '    bc.onmessage = function(e) {\n'
-+ '      if (e.data && e.data.type === "go") update(e.data.idx);\n'
-+ '    };\n'
-+ '  }\n'
-+ '\n'
-+ '  function go(n) {\n'
-+ '    update(n);\n'
-+ '    if (bc) bc.postMessage({ type: "go", idx: idx });\n'
-+ '  }\n'
-+ '  document.addEventListener("keydown", function(e) {\n'
-+ '    switch(e.key) {\n'
-+ '      case "ArrowRight": case " ": case "PageDown": go(idx + 1); e.preventDefault(); break;\n'
-+ '      case "ArrowLeft": case "PageUp": go(idx - 1); e.preventDefault(); break;\n'
-+ '      case "Home": go(0); break;\n'
-+ '      case "End": go(total - 1); break;\n'
-+ '      case "r": case "R": timerStart = Date.now(); pvTimer.textContent = "00:00"; break;\n'
-+ '      case "Escape": window.close(); break;\n'
-+ '    }\n'
-+ '  });\n'
-+ '\n'
-+ '  window.addEventListener("resize", reScale);\n'
-+ '\n'
-+ '  /* ===== Draggable splitters ===== */\n'
-+ '  (function initSplitters(){\n'
-+ '    var hsplit = document.getElementById("pv-hsplit");\n'
-+ '    var vsplit = document.getElementById("pv-vsplit");\n'
-+ '    var pvLeft = document.getElementById("pv-left");\n'
-+ '    var pvRight = document.getElementById("pv-right");\n'
-+ '    var pvMain = document.querySelector(".pv-main");\n'
-+ '    var pvNextWrap = document.getElementById("pv-next-wrap");\n'
-+ '    var pvNotesWrap = document.getElementById("pv-notes-wrap");\n'
-+ '\n'
-+ '    /* Horizontal splitter: left / right columns */\n'
-+ '    hsplit.addEventListener("mousedown", function(e){\n'
-+ '      e.preventDefault();\n'
-+ '      document.body.classList.add("pv-dragging");\n'
-+ '      var mainRect = pvMain.getBoundingClientRect();\n'
-+ '      function onMove(ev){\n'
-+ '        var x = ev.clientX - mainRect.left - 10;\n'
-+ '        var totalW = mainRect.width - 20 - 8;\n'
-+ '        var leftW = Math.max(200, Math.min(totalW - 200, x));\n'
-+ '        var rightW = totalW - leftW;\n'
-+ '        pvLeft.style.flex = "0 0 " + leftW + "px";\n'
-+ '        pvRight.style.flex = "0 0 " + rightW + "px";\n'
-+ '        reScale();\n'
-+ '      }\n'
-+ '      function onUp(){\n'
-+ '        document.removeEventListener("mousemove", onMove);\n'
-+ '        document.removeEventListener("mouseup", onUp);\n'
-+ '        document.body.classList.remove("pv-dragging");\n'
-+ '      }\n'
-+ '      document.addEventListener("mousemove", onMove);\n'
-+ '      document.addEventListener("mouseup", onUp);\n'
-+ '    });\n'
-+ '\n'
-+ '    /* Vertical splitter: next preview / notes */\n'
-+ '    vsplit.addEventListener("mousedown", function(e){\n'
-+ '      e.preventDefault();\n'
-+ '      document.body.classList.add("pv-dragging-v");\n'
-+ '      var rightRect = pvRight.getBoundingClientRect();\n'
-+ '      function onMove(ev){\n'
-+ '        var y = ev.clientY - rightRect.top;\n'
-+ '        var totalH = rightRect.height - 8;\n'
-+ '        var nextH = Math.max(80, Math.min(totalH - 100, y));\n'
-+ '        var notesH = totalH - nextH;\n'
-+ '        pvNextWrap.style.flex = "0 0 " + nextH + "px";\n'
-+ '        pvNotesWrap.style.flex = "0 0 " + notesH + "px";\n'
-+ '        reScale();\n'
-+ '      }\n'
-+ '      function onUp(){\n'
-+ '        document.removeEventListener("mousemove", onMove);\n'
-+ '        document.removeEventListener("mouseup", onUp);\n'
-+ '        document.body.classList.remove("pv-dragging-v");\n'
-+ '      }\n'
-+ '      document.addEventListener("mousemove", onMove);\n'
-+ '      document.addEventListener("mouseup", onUp);\n'
-+ '    });\n'
-+ '  })();\n'
-+ '\n'
-+ '  /* Wait for iframes to be ready, then render */\n'
-+ '  function initWhenReady() {\n'
-+ '    if (iframeCur.contentDocument && iframeNxt.contentDocument) {\n'
-+ '      update(idx);\n'
-+ '    } else {\n'
-+ '      setTimeout(initWhenReady, 50);\n'
-+ '    }\n'
-+ '  }\n'
-+ '  setTimeout(initWhenReady, 50);\n'
-+ '})();\n'
-+ '</' + 'script>\n'
-+ '</body></html>';
+  /* Magnetic card */
+  .pcard {
+    position: absolute;
+    background: #0d1117;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.02);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    min-width: 180px; min-height: 100px;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .pcard.dragging { box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 2px rgba(88,166,255,.5); border-color: #58a6ff; transition: none; z-index: 9999; }
+  .pcard.resizing { box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 2px rgba(63,185,80,.5); border-color: #3fb950; transition: none; z-index: 9999; }
+  .pcard:hover { border-color: rgba(88,166,255,.3); }
+
+  /* Card header (drag handle) */
+  .pcard-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .pcard-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot-color, #58a6ff); flex-shrink: 0; }
+  .pcard-title {
+    font-size: 11px; letter-spacing: .15em; text-transform: uppercase;
+    font-weight: 700; color: #8b949e; flex: 1;
+  }
+  .pcard-meta { font-size: 11px; color: #6e7681; }
+
+  /* Card body */
+  .pcard-body { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+
+  /* Preview cards (CURRENT/NEXT) — iframe-based pixel-perfect render */
+  .pcard-preview .pcard-body { background: #000; }
+  .pcard-preview iframe {
+    position: absolute; top: 0; left: 0;
+    width: 1920px; height: 1080px;
+    border: none;
+    transform-origin: top left;
+    pointer-events: none;
+    background: transparent;
+  }
+  .pcard-preview .preview-end {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #484f58; font-size: 14px; letter-spacing: .12em;
+  }
+
+  /* Notes card */
+  .pcard-notes .pcard-body {
+    padding: 14px 18px;
+    overflow-y: auto;
+    font-size: 18px; line-height: 1.75;
+    color: #d0d7de;
+    font-family: "Noto Sans SC", -apple-system, sans-serif;
+  }
+  .pcard-notes .pcard-body p { margin: 0 0 .7em 0; }
+  .pcard-notes .pcard-body strong { color: #f0883e; }
+  .pcard-notes .pcard-body em { color: #58a6ff; font-style: normal; }
+  .pcard-notes .pcard-body code {
+    font-family: "SF Mono", monospace; font-size: .9em;
+    background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 4px;
+  }
+  .pcard-notes .empty { color: #484f58; font-style: italic; }
+
+  /* Timer card */
+  .pcard-timer .pcard-body {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 18px 20px; justify-content: center;
+  }
+  .timer-display {
+    font-family: "SF Mono", "JetBrains Mono", monospace;
+    font-size: 42px; font-weight: 700;
+    color: #3fb950;
+    letter-spacing: .04em;
+    line-height: 1;
+  }
+  .timer-row {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; color: #8b949e;
+  }
+  .timer-row .label { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: #6e7681; }
+  .timer-row .val { color: #e6edf3; font-weight: 600; font-family: "SF Mono", monospace; }
+  .timer-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .timer-btn {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    color: #e6edf3;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .timer-btn:hover { background: rgba(88,166,255,.15); border-color: #58a6ff; }
+  .timer-btn:active { transform: translateY(1px); }
+
+  /* Resize handle */
+  .pcard-resize {
+    position: absolute; right: 0; bottom: 0;
+    width: 18px; height: 18px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.25) 60%, transparent 60%, transparent 70%, rgba(255,255,255,.25) 70%, rgba(255,255,255,.25) 80%, transparent 80%);
+    z-index: 5;
+  }
+  .pcard-resize:hover { background: linear-gradient(135deg, transparent 50%, #58a6ff 50%, #58a6ff 60%, transparent 60%, transparent 70%, #58a6ff 70%, #58a6ff 80%, transparent 80%); }
+
+  /* Bottom hint bar */
+  .hint-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding: 6px 16px;
+    font-size: 11px; color: #8b949e;
+    display: flex; gap: 18px; align-items: center;
+    z-index: 1000;
+  }
+  .hint-bar kbd {
+    background: rgba(255,255,255,.08);
+    padding: 1px 6px; border-radius: 3px;
+    font-family: "SF Mono", monospace;
+    font-size: 10px;
+    border: 1px solid rgba(255,255,255,.1);
+    color: #e6edf3;
+  }
+  .hint-bar .reset-layout {
+    margin-left: auto;
+    background: transparent; border: 1px solid rgba(255,255,255,.15);
+    color: #8b949e; padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; cursor: pointer; font-family: inherit;
+  }
+  .hint-bar .reset-layout:hover { background: rgba(248,81,73,.15); border-color: #f85149; color: #f85149; }
+
+  body.is-dragging-card * { user-select: none !important; }
+  body.is-dragging-card iframe { pointer-events: none !important; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="pcard pcard-preview" id="card-cur" style="--dot-color:#58a6ff">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">CURRENT</span>
+      <span class="pcard-meta" id="cur-meta">—</span>
+    </div>
+    <div class="pcard-body"><iframe id="iframe-cur"></iframe></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-preview" id="card-nxt" style="--dot-color:#bc8cff">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">NEXT</span>
+      <span class="pcard-meta" id="nxt-meta">—</span>
+    </div>
+    <div class="pcard-body"><iframe id="iframe-nxt"></iframe></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-notes" id="card-notes" style="--dot-color:#f0883e">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">SPEAKER SCRIPT · 逐字稿</span>
+    </div>
+    <div class="pcard-body" id="notes-body"></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-timer" id="card-timer" style="--dot-color:#3fb950">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">TIMER</span>
+    </div>
+    <div class="pcard-body">
+      <div class="timer-display" id="timer-display">00:00</div>
+      <div class="timer-row">
+        <span class="label">Slide</span>
+        <span class="val" id="timer-count">1 / ${total}</span>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn" id="btn-prev">← Prev</button>
+        <button class="timer-btn" id="btn-next">Next →</button>
+        <button class="timer-btn" id="btn-reset">⏱ Reset</button>
+      </div>
+    </div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+</div>
+
+<div class="hint-bar">
+  <span><kbd>← →</kbd> 翻页</span>
+  <span><kbd>R</kbd> 重置计时</span>
+  <span><kbd>Esc</kbd> 关闭</span>
+  <span style="color:#6e7681">拖动卡片头部移动 · 拖动右下角调整大小</span>
+  <button class="reset-layout" id="reset-layout">重置布局</button>
+</div>
+
+<script>
+(function(){
+  var slideMeta = ${metaJSON};
+  var total = ${total};
+  var idx = ${startIdx};
+  var deckUrl = ${deckUrlJSON};
+  var STORAGE_KEY = ${JSON.stringify(storageKey)};
+  var bc;
+  try { bc = new BroadcastChannel(${channelJSON}); } catch(e) {}
+
+  var iframeCur = document.getElementById('iframe-cur');
+  var iframeNxt = document.getElementById('iframe-nxt');
+  var notesBody = document.getElementById('notes-body');
+  var curMeta = document.getElementById('cur-meta');
+  var nxtMeta = document.getElementById('nxt-meta');
+  var timerDisplay = document.getElementById('timer-display');
+  var timerCount = document.getElementById('timer-count');
+
+  /* ===== Default card layout ===== */
+  function defaultLayout() {
+    var w = window.innerWidth;
+    var h = window.innerHeight - 36; /* leave room for hint bar */
+    return {
+      'card-cur':   { x: 16,        y: 16,            w: Math.round(w*0.55) - 24, h: Math.round(h*0.62) - 16 },
+      'card-nxt':   { x: Math.round(w*0.55) + 8, y: 16, w: w - Math.round(w*0.55) - 24, h: Math.round(h*0.42) - 16 },
+      'card-notes': { x: Math.round(w*0.55) + 8, y: Math.round(h*0.42) + 8, w: w - Math.round(w*0.55) - 24, h: h - Math.round(h*0.42) - 16 },
+      'card-timer': { x: 16,        y: Math.round(h*0.62) + 8, w: Math.round(w*0.55) - 24, h: h - Math.round(h*0.62) - 16 }
+    };
+  }
+
+  /* ===== Apply / save / restore layout ===== */
+  function applyLayout(layout) {
+    Object.keys(layout).forEach(function(id){
+      var el = document.getElementById(id);
+      var l = layout[id];
+      if (el && l) {
+        el.style.left = l.x + 'px';
+        el.style.top = l.y + 'px';
+        el.style.width = l.w + 'px';
+        el.style.height = l.h + 'px';
+      }
+    });
+    rescaleAll();
+  }
+  function readLayout() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return defaultLayout();
+  }
+  function saveLayout() {
+    var layout = {};
+    ['card-cur','card-nxt','card-notes','card-timer'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) {
+        layout[id] = {
+          x: parseInt(el.style.left,10) || 0,
+          y: parseInt(el.style.top,10) || 0,
+          w: parseInt(el.style.width,10) || 300,
+          h: parseInt(el.style.height,10) || 200
+        };
+      }
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(layout)); } catch(e) {}
+  }
+
+  /* ===== iframe rescale to fit card body ===== */
+  function rescaleIframe(iframe) {
+    if (!iframe || iframe.style.display === 'none') return;
+    var body = iframe.parentElement;
+    var cw = body.clientWidth, ch = body.clientHeight;
+    if (!cw || !ch) return;
+    var s = Math.min(cw / 1920, ch / 1080);
+    iframe.style.transform = 'scale(' + s + ')';
+    /* Center the scaled iframe in the body */
+    var sw = 1920 * s, sh = 1080 * s;
+    iframe.style.left = Math.max(0, (cw - sw) / 2) + 'px';
+    iframe.style.top = Math.max(0, (ch - sh) / 2) + 'px';
+  }
+  function rescaleAll() {
+    rescaleIframe(iframeCur);
+    rescaleIframe(iframeNxt);
+  }
+  window.addEventListener('resize', rescaleAll);
+
+  /* ===== Drag (move card by header) ===== */
+  document.querySelectorAll('[data-drag]').forEach(function(handle){
+    handle.addEventListener('mousedown', function(e){
+      if (e.button !== 0) return;
+      var card = handle.closest('.pcard');
+      if (!card) return;
+      e.preventDefault();
+      card.classList.add('dragging');
+      document.body.classList.add('is-dragging-card');
+      var startX = e.clientX, startY = e.clientY;
+      var startL = parseInt(card.style.left,10) || 0;
+      var startT = parseInt(card.style.top,10)  || 0;
+      function onMove(ev){
+        var nx = Math.max(0, Math.min(window.innerWidth - 100, startL + ev.clientX - startX));
+        var ny = Math.max(0, Math.min(window.innerHeight - 50, startT + ev.clientY - startY));
+        card.style.left = nx + 'px';
+        card.style.top = ny + 'px';
+      }
+      function onUp(){
+        card.classList.remove('dragging');
+        document.body.classList.remove('is-dragging-card');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        saveLayout();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+
+  /* ===== Resize (drag bottom-right corner) ===== */
+  document.querySelectorAll('[data-resize]').forEach(function(handle){
+    handle.addEventListener('mousedown', function(e){
+      if (e.button !== 0) return;
+      var card = handle.closest('.pcard');
+      if (!card) return;
+      e.preventDefault(); e.stopPropagation();
+      card.classList.add('resizing');
+      document.body.classList.add('is-dragging-card');
+      var startX = e.clientX, startY = e.clientY;
+      var startW = parseInt(card.style.width,10)  || card.offsetWidth;
+      var startH = parseInt(card.style.height,10) || card.offsetHeight;
+      function onMove(ev){
+        var nw = Math.max(180, startW + ev.clientX - startX);
+        var nh = Math.max(100, startH + ev.clientY - startY);
+        card.style.width = nw + 'px';
+        card.style.height = nh + 'px';
+        if (card.querySelector('iframe')) rescaleIframe(card.querySelector('iframe'));
+      }
+      function onUp(){
+        card.classList.remove('resizing');
+        document.body.classList.remove('is-dragging-card');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        rescaleAll();
+        saveLayout();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+
+  /* ===== Update content ===== */
+  function update(n) {
+    n = Math.max(0, Math.min(total - 1, n));
+    idx = n;
+
+    /* Current preview iframe */
+    var curUrl = deckUrl + '?preview=' + (n + 1) + '&_ts=' + Date.now();
+    iframeCur.src = curUrl;
+    curMeta.textContent = (n + 1) + '/' + total;
+
+    /* Next preview iframe */
+    if (n + 1 < total) {
+      iframeNxt.style.display = '';
+      var endEl = document.querySelector('#card-nxt .preview-end');
+      if (endEl) endEl.remove();
+      iframeNxt.src = deckUrl + '?preview=' + (n + 2) + '&_ts=' + Date.now();
+      nxtMeta.textContent = (n + 2) + '/' + total;
+    } else {
+      iframeNxt.style.display = 'none';
+      var body = document.querySelector('#card-nxt .pcard-body');
+      if (body && !body.querySelector('.preview-end')) {
+        var end = document.createElement('div');
+        end.className = 'preview-end';
+        end.textContent = '— END OF DECK —';
+        body.appendChild(end);
+      }
+      nxtMeta.textContent = 'END';
     }
 
+    /* Notes */
+    var note = slideMeta[n].notes;
+    notesBody.innerHTML = note || '<span class="empty">（这一页还没有逐字稿）</span>';
+
+    /* Timer count */
+    timerCount.textContent = (n + 1) + ' / ' + total;
+
+    /* Re-fit after src change */
+    setTimeout(rescaleAll, 200);
+  }
+
+  /* ===== Timer ===== */
+  var tStart = Date.now();
+  setInterval(function(){
+    var s = Math.floor((Date.now() - tStart) / 1000);
+    var mm = String(Math.floor(s/60)).padStart(2,'0');
+    var ss = String(s%60).padStart(2,'0');
+    timerDisplay.textContent = mm + ':' + ss;
+  }, 1000);
+  function resetTimer(){ tStart = Date.now(); timerDisplay.textContent = '00:00'; }
+
+  /* ===== BroadcastChannel sync ===== */
+  if (bc) {
+    bc.onmessage = function(e){
+      if (e.data && e.data.type === 'go') update(e.data.idx);
+    };
+  }
+  function go(n) {
+    update(n);
+    if (bc) bc.postMessage({ type: 'go', idx: idx });
+  }
+
+  /* ===== Buttons ===== */
+  document.getElementById('btn-prev').addEventListener('click', function(){ go(idx - 1); });
+  document.getElementById('btn-next').addEventListener('click', function(){ go(idx + 1); });
+  document.getElementById('btn-reset').addEventListener('click', resetTimer);
+  document.getElementById('reset-layout').addEventListener('click', function(){
+    if (confirm('恢复默认卡片布局？')) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+      applyLayout(defaultLayout());
+    }
+  });
+
+  /* ===== Keyboard ===== */
+  document.addEventListener('keydown', function(e){
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    switch(e.key) {
+      case 'ArrowRight': case ' ': case 'PageDown': go(idx + 1); e.preventDefault(); break;
+      case 'ArrowLeft':  case 'PageUp':   go(idx - 1); e.preventDefault(); break;
+      case 'Home': go(0); break;
+      case 'End':  go(total - 1); break;
+      case 'r': case 'R': resetTimer(); break;
+      case 'Escape': window.close(); break;
+    }
+  });
+
+  /* ===== Iframe load → rescale (catches initial size) ===== */
+  iframeCur.addEventListener('load', function(){ rescaleIframe(iframeCur); });
+  iframeNxt.addEventListener('load', function(){ rescaleIframe(iframeNxt); });
+
+  /* ===== Init ===== */
+  applyLayout(readLayout());
+  update(idx);
+})();
+</` + `script>
+</body></html>`;
+    }
     function fullscreen(){ const el=document.documentElement;
       if (!document.fullscreenElement) el.requestFullscreen&&el.requestFullscreen();
       else document.exitFullscreen&&document.exitFullscreen();
