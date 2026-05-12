@@ -40,8 +40,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/lewislulu/html-ppt-skill.git
-cd html-ppt-skill
+git clone https://github.com/zouyunchong/SKILL-TO-PPT.git
+cd SKILL-TO-PPT
 
 # 2. 进入 web-app 子目录，安装依赖
 cd web-app

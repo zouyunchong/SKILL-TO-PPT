@@ -12,7 +12,7 @@ All pages share a token-based design system in `assets/base.css`.
 ## Install
 
 ```bash
-npx skills add https://github.com/lewislulu/html-ppt-skill
+npx skills add https://github.com/zouyunchong/SKILL-TO-PPT
 ```
 
 One command, no build. Pure static HTML/CSS/JS with only CDN webfonts.
@@ -218,6 +218,6 @@ A                                       cycle demo animation on current slide
 Esc                                     close all overlays
 ```
 
-## License & author
+## License
 
-MIT. Copyright (c) 2026 lewis &lt;sudolewis@gmail.com&gt;.
+MIT. See [LICENSE](LICENSE).
