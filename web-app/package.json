@@ -1,0 +1,16 @@
+{
+  "name": "html-ppt-web",
+  "version": "1.0.0",
+  "description": "Web UI for html-ppt-skill — generate presentations with DeepSeek AI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "openai": "^4.67.0",
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^24.43.1"
+  }
+}

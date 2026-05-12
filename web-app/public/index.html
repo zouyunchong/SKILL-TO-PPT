@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HTML-PPT AI 生成器</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:  #0d1117; --sf: #161b22; --sf2: #21262d; --sf3: #2d333b;
+  --bd:  #30363d; --t1: #e6edf3; --t2: #8b949e;  --t3: #6e7681;
+  --acc: #7aa2f7; --acc2: #5a85f0; --ok: #3fb950; --err: #f85149;
+  --r: 8px; --r2: 5px; --mono: 'SF Mono',Menlo,'Fira Code',monospace;
+  --sb: 260px;
+}
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--t1); font: 13px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; display: flex; flex-direction: column; }
+
+/* ══ 顶栏 ══════════════════════════════════════════════ */
+.topbar {
+  height: 42px; flex-shrink: 0;
+  background: var(--sf); border-bottom: 1px solid var(--bd);
+  display: flex; align-items: center; gap: 8px; padding: 0 12px;
+}
+.logo { font-weight: 700; font-size: 13px; color: var(--acc); white-space: nowrap; }
+.top-url { flex: 1; font-size: 11px; color: var(--t3); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbtn { height: 26px; padding: 0 11px; border-radius: var(--r2); border: 1px solid var(--bd); background: var(--sf2); color: var(--t2); font-size: 11px; cursor: pointer; white-space: nowrap; }
+.tbtn:hover:not(:disabled) { border-color: var(--acc); color: var(--t1); }
+.tbtn:disabled { opacity: .3; cursor: default; }
+.tbtn.pri { background: var(--acc); border-color: var(--acc); color: #fff; }
+.tbtn.pri:hover:not(:disabled) { background: var(--acc2); }
+
+/* ══ 主体（侧边栏 + 预览） ══════════════════════════════ */
+.body { flex: 1; display: flex; overflow: hidden; }
+
+/* ══ 侧边栏 ═════════════════════════════════════════════ */
+.sidebar {
+  width: var(--sb); flex-shrink: 0;
+  background: var(--sf); border-right: 1px solid var(--bd);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-scroll { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; }
+.sb-scroll::-webkit-scrollbar { width: 3px; }
+.sb-scroll::-webkit-scrollbar-thumb { background: var(--sf3); border-radius: 2px; }
+
+/* 区块 */
+.sec { display: flex; flex-direction: column; gap: 6px; }
+.sec-label { font-size: 10px; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .7px; }
+
+/* 输入控件 */
+.inp  { width: 100%; background: var(--sf2); border: 1px solid var(--bd); border-radius: var(--r2); padding: 6px 9px; color: var(--t1); font-size: 12px; outline: none; }
+.inp:focus { border-color: var(--acc); }
+.inp::placeholder { color: var(--t3); }
+.sel  { width: 100%; background: var(--sf2); border: 1px solid var(--bd); border-radius: var(--r2); padding: 6px 9px; color: var(--t1); font-size: 12px; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236e7681'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 9px center; padding-right: 24px; }
+.sel:focus { border-color: var(--acc); }
+
+/* 数字 + 步进 */
+.num-row { display: flex; align-items: center; }
+.step-btn { width: 28px; height: 30px; background: var(--sf2); border: 1px solid var(--bd); color: var(--t1); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.step-btn:first-child { border-radius: var(--r2) 0 0 var(--r2); }
+.step-btn:last-child  { border-radius: 0 var(--r2) var(--r2) 0; }
+.step-btn:hover { background: var(--sf3); }
+.num-inp { flex: 1; background: var(--sf2); border-top: 1px solid var(--bd); border-bottom: 1px solid var(--bd); border-left: none; border-right: none; padding: 6px 0; text-align: center; color: var(--t1); font-size: 13px; outline: none; }
+
+/* Prompt 区 */
+.prompt-wrap { position: relative; }
+.prompt { width: 100%; background: var(--sf2); border: 1px solid var(--bd); border-radius: var(--r2); padding: 9px 10px; color: var(--t1); font-size: 12px; resize: none; outline: none; font-family: inherit; line-height: 1.55; min-height: 90px; }
+.prompt:focus { border-color: var(--acc); }
+.prompt::placeholder { color: var(--t3); }
+.prompt-hint { font-size: 10px; color: var(--t3); text-align: right; margin-top: 3px; }
+
+/* 示例按钮 */
+.egs { display: flex; flex-wrap: wrap; gap: 4px; }
+.eg { font-size: 10px; padding: 3px 8px; border-radius: 20px; border: 1px solid var(--bd); background: transparent; color: var(--t2); cursor: pointer; line-height: 1.4; }
+.eg:hover { border-color: var(--acc); color: var(--t1); }
+
+/* 生成按钮 */
+.gen-btn { width: 100%; padding: 10px; background: var(--acc); border: none; border-radius: var(--r2); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+.gen-btn:hover:not(:disabled) { background: var(--acc2); }
+.gen-btn:disabled { background: var(--sf3); color: var(--t3); cursor: default; }
+
+/* 日志 */
+.log { background: var(--sf2); border: 1px solid var(--bd); border-radius: var(--r2); padding: 7px 9px; font-family: var(--mono); font-size: 10px; color: var(--t2); min-height: 48px; max-height: 140px; overflow-y: auto; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+.log::-webkit-scrollbar { width: 3px; }
+.log::-webkit-scrollbar-thumb { background: var(--sf3); }
+.l-ok   { color: var(--ok); }
+.l-err  { color: var(--err); }
+.l-info { color: var(--acc); }
+
+/* 分割线 */
+.divider { height: 1px; background: var(--bd); margin: 2px 0; }
+
+/* ══ 预览主区 ═══════════════════════════════════════════ */
+.preview-area { flex: 1; position: relative; background: #111; overflow: hidden; display: flex; align-items: stretch; }
+
+/* iframe */
+.frame { flex: 1; border: none; display: none; }
+
+/* 空状态 */
+.empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--t3); pointer-events: none; user-select: none; }
+.empty-icon { font-size: 44px; opacity: .25; }
+.empty-text { font-size: 13px; }
+.empty-sub  { font-size: 11px; }
+
+/* 生成中遮罩 */
+.gen-mask { position: absolute; inset: 0; background: rgba(13,17,23,.85); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 20; }
+.gen-mask.vis { display: flex; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--bd); border-top-color: var(--acc); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.mask-status { font-size: 13px; color: var(--t1); text-align: center; max-width: 340px; }
+.mask-think  { font-size: 10px; color: var(--t2); max-width: 380px; max-height: 80px; overflow: hidden; text-align: center; word-break: break-all; }
+
+/* 覆层翻页箭头 */
+.nav-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 72px;
+  background: rgba(255,255,255,.07); backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.1); border-radius: var(--r);
+  color: rgba(255,255,255,.5); font-size: 18px; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  z-index: 10; transition: background .15s, color .15s;
+}
+.nav-btn:hover { background: rgba(255,255,255,.16); color: #fff; }
+.nav-btn.l { left: 10px; }
+.nav-btn.r { right: 10px; }
+.nav-btn.show { display: flex; }
+
+/* 页码 badge — 底部中央固定 */
+.pg-badge {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.15); border-radius: 20px;
+  padding: 4px 16px; font-size: 12px; color: rgba(255,255,255,.75);
+  font-family: var(--mono); display: none; z-index: 15; pointer-events: none;
+  white-space: nowrap; letter-spacing: .04em;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ── 顶栏 ── -->
+<header class="topbar">
+  <div class="logo">PPT AI</div>
+  <span class="top-url" id="topUrl">尚未生成</span>
+  <button class="tbtn" id="btnTab" disabled onclick="openTab()">新窗口</button>
+  <button class="tbtn" id="btnDl"  disabled onclick="downloadHtml()">下载 HTML</button>
+  <button class="tbtn pri" id="btnPdf" disabled onclick="exportPdf()">⬇ 导出 PDF</button>
+</header>
+
+<div class="body">
+
+  <!-- ══ 侧边栏 ══ -->
+  <aside class="sidebar">
+    <div class="sb-scroll">
+
+      <!-- API Key -->
+      <div class="sec">
+        <div class="sec-label">DeepSeek API Key</div>
+        <input class="inp" id="apiKey" type="password" placeholder="sk-xxxxxxxx" autocomplete="off">
+      </div>
+
+      <!-- 模型 -->
+      <div class="sec">
+        <div class="sec-label">模型</div>
+        <select class="sel" id="modelSel">
+          <option value="deepseek-v4-pro">deepseek-v4-pro · 旗舰</option>
+          <option value="deepseek-v4-flash">deepseek-v4-flash · 高速</option>
+          <option value="deepseek-chat">deepseek-chat · 兼容</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--t2);cursor:pointer">
+          <input type="checkbox" id="thinkChk" style="accent-color:var(--acc)">
+          开启思考模式（更慢、更准）
+        </label>
+      </div>
+
+      <!-- 页数 -->
+      <div class="sec">
+        <div class="sec-label">幻灯片页数</div>
+        <div class="num-row">
+          <button class="step-btn" onclick="adj(-1)">−</button>
+          <input class="num-inp" id="slideCount" type="number" min="1" max="60" value="8">
+          <button class="step-btn" onclick="adj(1)">+</button>
+        </div>
+      </div>
+
+      <!-- 主题 -->
+      <div class="sec">
+        <div class="sec-label">主题</div>
+        <select class="sel" id="themeSel">
+          <option value="">自动选择</option>
+        </select>
+      </div>
+
+      <!-- 模板 -->
+      <div class="sec">
+        <div class="sec-label">基础模板</div>
+        <select class="sel" id="tplSel">
+          <option value="">从零生成</option>
+        </select>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 示例 -->
+      <div class="sec">
+        <div class="sec-label">快速示例</div>
+        <div class="egs" id="egs"></div>
+      </div>
+
+      <!-- Prompt -->
+      <div class="sec">
+        <div class="sec-label">PPT 需求</div>
+        <textarea class="prompt" id="prompt" rows="5" placeholder="描述你的 PPT 需求，例如：2026 AI 技术现状与趋势，高大上风格，含实际案例和数据…"></textarea>
+        <div class="prompt-hint">⌘ + ↵ 发送</div>
+      </div>
+
+      <!-- 生成 -->
+      <button class="gen-btn" id="genBtn" onclick="generate()">⚡ 生成 PPT</button>
+
+      <!-- 日志 -->
+      <div class="sec">
+        <div class="sec-label">日志 <span style="float:right;cursor:pointer;font-weight:400;text-transform:none;letter-spacing:0" onclick="$('log').textContent=''">清空</span></div>
+        <div class="log" id="log">等待生成…</div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ══ 预览主区 ══ -->
+  <main class="preview-area" id="previewArea">
+
+    <!-- 空状态 -->
+    <div class="empty" id="emptyState">
+      <div class="empty-icon">✦</div>
+      <div class="empty-text">填写需求，点击生成 PPT</div>
+      <div class="empty-sub">基于 html-ppt-skill · 36 套主题 · 动画 · 演讲者模式</div>
+    </div>
+
+    <!-- 生成中遮罩 -->
+    <div class="gen-mask" id="genMask">
+      <div class="spinner"></div>
+      <div class="mask-status" id="maskStatus">正在生成…</div>
+      <div class="mask-think"  id="maskThink"></div>
+    </div>
+
+    <!-- 预览 iframe -->
+    <iframe class="frame" id="frame" title="PPT 预览"></iframe>
+
+    <!-- 翻页箭头（覆层） -->
+    <button class="nav-btn l" id="navL" onclick="nav('ArrowLeft')" title="上一页 ←">◀</button>
+    <button class="nav-btn r" id="navR" onclick="nav('ArrowRight')" title="下一页 →">▶</button>
+
+    <!-- 页码 badge，固定在预览底部中央 -->
+    <div class="pg-badge" id="pgBadge"></div>
+
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const frame = $('frame');
+let currentDeckId = null;   // 当前预览的 deckId（导出用）
+
+// ── 初始化 ──────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // 还原 API Key
+  const saved = localStorage.getItem('ds_key');
+  if (saved) $('apiKey').value = saved;
+  $('apiKey').addEventListener('change', () => localStorage.setItem('ds_key', $('apiKey').value.trim()));
+
+  // ⌘+Enter
+  $('prompt').addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
+  });
+
+  // 示例
+  const EGS = ['AI 技术现状与趋势 高大上','Kubernetes 入门原理','产品季度复盘 OKR','融资路演 Pitch Deck','前端性能优化实践','大模型应用架构设计'];
+  EGS.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'eg'; b.textContent = t;
+    b.onclick = () => $('prompt').value = t;
+    $('egs').appendChild(b);
+  });
+
+  // 加载主题
+  const themes = await fetch('/api/themes').then(r => r.json()).catch(() => []);
+  themes.forEach(t => {
+    const o = new Option(t.name.replace(/-/g, ' '), t.name);
+    $('themeSel').appendChild(o);
+  });
+
+  // 加载模板
+  const tpls = await fetch('/api/templates').then(r => r.json()).catch(() => []);
+  tpls.forEach(t => {
+    const o = new Option((t.label || t.name).slice(0, 28), t.name);
+    $('tplSel').appendChild(o);
+  });
+
+  startSlidePoller();
+});
+
+// ── 页数步进 ─────────────────────────────────────────────────────────────────
+function adj(d) {
+  const el = $('slideCount');
+  el.value = Math.max(1, Math.min(60, Number(el.value) + d));
+}
+
+// ── 生成 ─────────────────────────────────────────────────────────────────────
+async function generate() {
+  const prompt = $('prompt').value.trim();
+  if (!prompt) { $('prompt').focus(); return; }
+  const apiKey = $('apiKey').value.trim();
+  if (!apiKey) { $('apiKey').focus(); return; }
+
+  const slideCount = Number($('slideCount').value) || 8;
+  showMask(`⚡ 正在生成 ${slideCount} 页 PPT…`);
+  $('genBtn').disabled = true;
+  log(`▶ ${$('modelSel').value} · ${slideCount} 页\n`, 'l-info');
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt, slideCount, apiKey,
+        model: $('modelSel').value,
+        baseTemplate: $('tplSel').value || null,
+        theme: $('themeSel').value || null,
+        enableThinking: $('thinkChk').checked,
+      }),
+    });
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split('\n\n'); buf = parts.pop();
+      for (const p of parts) {
+        const ev  = p.match(/^event: (\w+)/m)?.[1];
+        const raw = p.match(/^data: (.+)/ms)?.[1];
+        if (!ev || !raw) continue;
+        try { handleSSE(ev, JSON.parse(raw)); } catch {}
+      }
+    }
+  } catch (e) {
+    hideMask();
+    log(`❌ ${e.message}\n`, 'l-err');
+  }
+  $('genBtn').disabled = false;
+}
+
+function handleSSE(ev, d) {
+  switch (ev) {
+    case 'status':   setMaskStatus(d.message); log(d.message + '\n', 'l-info'); break;
+    case 'thinking': $('maskThink').textContent = d.text.slice(-160); break;
+    case 'token':    break;
+    case 'complete':
+      hideMask();
+      if (d.actualCount === d.requestedCount) {
+        log(`✅ 完成 · ${d.actualCount} 页 · ${d.htmlLen} 字符\n`, 'l-ok');
+      } else {
+        log(`⚠ AI 实际生成 ${d.actualCount} 页（期望 ${d.requestedCount}），可点「生成」重试\n`, 'l-err');
+      }
+      currentDeckId = d.deckId;
+      loadPreview(d.previewUrl);
+      break;
+    case 'error':
+      hideMask();
+      log(`❌ ${d.message}\n`, 'l-err');
+      break;
+  }
+}
+
+// ── 遮罩 ─────────────────────────────────────────────────────────────────────
+function showMask(msg) {
+  $('emptyState').style.display = 'none';
+  $('maskThink').textContent = '';
+  setMaskStatus(msg);
+  $('genMask').classList.add('vis');
+}
+function hideMask()          { $('genMask').classList.remove('vis'); }
+function setMaskStatus(t)    { $('maskStatus').textContent = t; }
+
+// ── 预览 ─────────────────────────────────────────────────────────────────────
+function loadPreview(url) {
+  $('topUrl').textContent = url;
+  // 从 url 反推 deckId（用于历史记录点击进来的场景）
+  const m = url.match(/\/(deck-\d+)\//);
+  if (m) currentDeckId = m[1];
+  frame.src = url;
+  frame.style.display = 'block';
+  frame.onload = onLoad;
+  $('btnDl').disabled = false;
+  $('btnTab').disabled = false;
+  $('btnPdf').disabled = false;
+}
+
+function onLoad() {
+  frame.contentWindow?.focus();
+  $('navL').classList.add('show');
+  $('navR').classList.add('show');
+  $('pgBadge').style.display = 'block';
+  $('pgBadge').textContent = '1 / ?';
+}
+
+// ── 键盘导航 ─────────────────────────────────────────────────────────────────
+function nav(key) {
+  try {
+    frame.contentWindow?.focus();
+    // 派发到 body，冒泡到 document，runtime.js 能接到
+    const t = frame.contentDocument?.body ?? frame.contentDocument;
+    t?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+  } catch (e) { console.warn('nav', e); }
+}
+
+// 全局键盘转发（焦点不在侧边栏输入时）
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (frame.style.display === 'none') return;
+  const FWD = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','PageUp','PageDown','Escape','f','F','s','S','o','O','t','T','n','N','a','A'];
+  if (FWD.includes(e.key)) { e.preventDefault(); nav(e.key); }
+});
+
+// 点预览区聚焦 iframe
+$('previewArea').addEventListener('click', e => {
+  if (!e.target.classList.contains('nav-btn') && frame.style.display !== 'none') {
+    frame.contentWindow?.focus();
+  }
+});
+
+// ── 幻灯片编号轮询（读 hash 更新底部 badge） ─────────────────────────────────
+function startSlidePoller() {
+  (function poll() {
+    if (frame.style.display !== 'none') {
+      try {
+        const doc    = frame.contentDocument;
+        const hash   = frame.contentWindow?.location?.hash || '';
+        const m      = /\/?#?\/?(\d+)/.exec(hash);
+        // 兼容多种结构：优先 .deck .slide，回退到 section.slide
+        const slides = doc?.querySelectorAll('.deck .slide').length
+                     ? doc.querySelectorAll('.deck .slide')
+                     : doc?.querySelectorAll('section.slide');
+        const total  = slides?.length || 0;
+        const cur    = m ? m[1] : (total ? '1' : '?');
+        const badge  = $('pgBadge');
+        if (total && badge) badge.textContent = `${cur} / ${total}`;
+      } catch {}
+    }
+    requestAnimationFrame(poll);
+  })();
+}
+
+// ── 工具 ─────────────────────────────────────────────────────────────────────
+function openTab() {
+  const u = $('topUrl').textContent;
+  if (u && u !== '尚未生成') window.open(u, '_blank');
+}
+async function downloadHtml() {
+  const u = $('topUrl').textContent;
+  if (!u || u === '尚未生成') return;
+  const html = await fetch(u).then(r => r.text());
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  a.download = 'presentation.html'; a.click();
+}
+
+async function exportPdf() {
+  if (!currentDeckId) return;
+  const btn = $('btnPdf');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ 导出中…';
+  log('📄 开始导出 PDF（headless Chrome 逐页截图，请稍候）…\n', 'l-info');
+  try {
+    const res = await fetch(`/api/export/${currentDeckId}/pdf`, { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({error: '导出失败'}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${currentDeckId}.pdf`;
+    a.click();
+    log(`✅ PDF 已导出 · ${(blob.size/1024).toFixed(0)} KB\n`, 'l-ok');
+  } catch (e) {
+    log(`❌ ${e.message}\n`, 'l-err');
+  }
+  btn.disabled = false;
+  btn.textContent = original;
+}
+
+function log(text, cls = '') {
+  const el = $('log');
+  if (el.textContent === '等待生成…') el.textContent = '';
+  const sp = document.createElement('span');
+  if (cls) sp.className = cls;
+  sp.textContent = text;
+  el.appendChild(sp);
+  el.scrollTop = el.scrollHeight;
+}
+</script>
+</body>
+</html>

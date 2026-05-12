@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="glassmorphism">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 现状 2026 · 智能新纪元</title>
+<link rel="stylesheet" href="../../assets/fonts.css">
+<link rel="stylesheet" href="../../assets/base.css">
+<link rel="stylesheet" id="theme-link" href="../../assets/themes/glassmorphism.css">
+<link rel="stylesheet" href="../../assets/animations/animations.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="../../assets/animations/fx-runtime.js"></script>
+<style>
+  .glass-card {
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: var(--radius);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    padding: 28px;
+  }
+  .glass-card-sm {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 18px 22px;
+  }
+  .grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .num-big {
+    font-size: 68px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -.04em;
+  }
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    border: 1px solid;
+  }
+  .glow-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(125,211,252,.5), rgba(192,132,252,.5), transparent);
+    margin: 24px 0;
+  }
+  .model-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .model-row:last-child { border-bottom: none; }
+  .model-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .model-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--grad);
+  }
+  .timeline-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--grad);
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(125,211,252,.6);
+  }
+  .sector-card {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: var(--radius);
+    padding: 22px;
+    transition: transform .2s, border-color .2s;
+  }
+  .sector-card:hover { transform: translateY(-4px); border-color: rgba(125,211,252,.35); }
+</style>
+</head>
+<body data-themes="glassmorphism,aurora,cyberpunk-neon,tokyo-night,minimal-white" data-theme-base="../../assets/themes/">
+
+<div class="deck">
+
+  <!-- ① Cover -->
+  <section class="slide" data-title="Cover" style="overflow:hidden">
+    <div data-fx="galaxy-swirl" style="position:absolute;inset:0;opacity:.45;pointer-events:none"></div>
+    <div style="position:relative;z-index:1;display:flex;flex-direction:column;height:100%;justify-content:center">
+      <div class="deck-header" style="position:absolute;top:0;left:0;right:0">
+        <span style="font-size:12px;color:var(--text-3);letter-spacing:.08em">AI STATUS REPORT · 2026</span>
+        <span style="font-size:12px;color:var(--text-3)">INTELLIGENCE ECONOMICS INSTITUTE</span>
+      </div>
+      <div style="max-width:900px">
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;border:1px solid rgba(125,211,252,.35);background:rgba(125,211,252,.08);margin-bottom:24px">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;box-shadow:0 0 8px var(--accent)"></span>
+          <span style="font-size:12px;color:var(--accent);letter-spacing:.06em;font-weight:600">LIVE · 2026 全年数据</span>
+        </div>
+        <h1 class="anim-rise-in" data-anim="rise-in" style="font-size:96px;font-weight:900;line-height:.95;letter-spacing:-.04em;color:#fff;margin-bottom:8px">
+          AI 现状<br><span class="grad-text">2026</span>
+        </h1>
+        <p style="font-size:28px;font-weight:300;color:var(--text-2);margin-top:20px;letter-spacing:.01em">智能新纪元 · 从语言到行动的跃迁</p>
+        <div class="glow-line" style="max-width:500px"></div>
+        <div style="display:flex;gap:48px;margin-top:8px">
+          <div>
+            <div style="font-size:38px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">$1.8T</div>
+            <div style="font-size:13px;color:var(--text-3);margin-top:2px">全球 AI 市场规模</div>
+          </div>
+          <div>
+            <div style="font-size:38px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">340%</div>
+            <div style="font-size:13px;color:var(--text-3);margin-top:2px">三年复合增长</div>
+          </div>
+          <div>
+            <div style="font-size:38px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">2.4B</div>
+            <div style="font-size:13px;color:var(--text-3);margin-top:2px">月活 AI 用户数</div>
+          </div>
+          <div>
+            <div style="font-size:38px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">180+</div>
+            <div style="font-size:13px;color:var(--text-3);margin-top:2px">前沿基础模型</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer" style="position:absolute;bottom:0;left:0;right:0;padding:24px 64px">
+      <span style="font-size:12px;color:var(--text-3)">数据来源：IEI · Gartner · IDC · Bloomberg Intelligence</span>
+      <span class="slide-number" data-current="1" data-total="10"></span>
+    </div>
+    <div class="notes">开场：我们正处在 AI 历史上变化最快的时刻。今天这份报告覆盖市场规模、技术格局、行业落地、算力竞争和未来趋势，用数据说话。</div>
+  </section>
+
+  <!-- ② 市场规模 KPI -->
+  <section class="slide" data-title="Market Scale">
+    <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">01 · MARKET SCALE</span></div>
+    <h2 data-anim="fade-down" style="font-size:52px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:8px">AI 已是史上增长最快的<span class="grad-text">技术产业</span></h2>
+    <p style="color:var(--text-2);font-size:17px;margin-bottom:28px">2023—2026 三年，全球 AI 产业从 $420B 扩张至 $1.8T，超越历史上任何一次技术浪潮。</p>
+    <div class="grid g4 mt-m anim-stagger-list" data-anim-target>
+      <div class="glass-card" style="text-align:center">
+        <div style="font-size:13px;color:var(--accent);letter-spacing:.06em;margin-bottom:12px">市场总规模</div>
+        <div class="num-big grad-text">$1.8<span style="font-size:40px">T</span></div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:8px">2026 全年预测</div>
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:rgba(134,239,172,.12);border:1px solid rgba(134,239,172,.25)">
+          <span style="color:#86efac;font-size:12px;font-weight:700">↑ 48%</span>
+          <span style="color:var(--text-3);font-size:11px">YoY</span>
+        </div>
+      </div>
+      <div class="glass-card" style="text-align:center">
+        <div style="font-size:13px;color:var(--accent);letter-spacing:.06em;margin-bottom:12px">企业 AI 投资</div>
+        <div class="num-big grad-text">$620<span style="font-size:40px">B</span></div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:8px">企业级 AI 支出</div>
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:rgba(134,239,172,.12);border:1px solid rgba(134,239,172,.25)">
+          <span style="color:#86efac;font-size:12px;font-weight:700">↑ 62%</span>
+          <span style="color:var(--text-3);font-size:11px">YoY</span>
+        </div>
+      </div>
+      <div class="glass-card" style="text-align:center">
+        <div style="font-size:13px;color:var(--accent);letter-spacing:.06em;margin-bottom:12px">AI 独角兽</div>
+        <div class="num-big grad-text"><span class="counter" data-to="847">0</span></div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:8px">全球 AI 独角兽企业</div>
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:rgba(134,239,172,.12);border:1px solid rgba(134,239,172,.25)">
+          <span style="color:#86efac;font-size:12px;font-weight:700">↑ 3.2×</span>
+          <span style="color:var(--text-3);font-size:11px">vs 2023</span>
+        </div>
+      </div>
+      <div class="glass-card" style="text-align:center">
+        <div style="font-size:13px;color:var(--accent);letter-spacing:.06em;margin-bottom:12px">VC 融资</div>
+        <div class="num-big grad-text">$380<span style="font-size:40px">B</span></div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:8px">2026 年度 AI 融资额</div>
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:rgba(252,165,165,.12);border:1px solid rgba(252,165,165,.25)">
+          <span style="color:#fca5a5;font-size:12px;font-weight:700">↓ 12%</span>
+          <span style="color:var(--text-3);font-size:11px">理性回归</span>
+        </div>
+      </div>
+    </div>
+    <div style="height:180px;margin-top:20px" id="market-chart-wrap">
+      <canvas id="market-chart"></canvas>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">市场规模</span><span class="slide-number" data-current="2" data-total="10"></span></div>
+    <div class="notes">三年 4× 增长是什么概念——互联网用了 12 年，移动互联网用了 8 年，AI 只用了 3 年。这不是泡沫，是真实的商业化在跟上。</div>
+  </section>
+
+  <!-- ③ 大模型格局 -->
+  <section class="slide" data-title="LLM Landscape">
+    <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">02 · LLM LANDSCAPE</span></div>
+    <h2 data-anim="fade-down" style="font-size:52px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:24px">前沿模型格局：<span class="grad-text">群雄并立</span>，差距收窄</h2>
+    <div class="grid g2" style="gap:24px;align-items:start">
+      <div>
+        <div class="glass-card" style="padding:20px 24px">
+          <div style="font-size:12px;color:var(--text-3);letter-spacing:.06em;margin-bottom:16px">MMLU 综合能力排行（2026 Q2）</div>
+          <div class="model-row">
+            <div style="width:130px;font-size:14px;color:var(--text-1);font-weight:600">GPT-5</div>
+            <div style="width:44px;font-size:13px;color:var(--accent);font-weight:700;text-align:right;margin-right:12px">96.4</div>
+            <div class="model-bar-bg"><div class="model-bar-fill" style="width:96.4%"></div></div>
+            <span class="tag-pill" style="margin-left:12px;color:var(--accent);border-color:rgba(125,211,252,.3);background:rgba(125,211,252,.1);flex-shrink:0">OpenAI</span>
+          </div>
+          <div class="model-row">
+            <div style="width:130px;font-size:14px;color:var(--text-1);font-weight:600">Claude 4 Opus</div>
+            <div style="width:44px;font-size:13px;color:var(--accent);font-weight:700;text-align:right;margin-right:12px">95.8</div>
+            <div class="model-bar-bg"><div class="model-bar-fill" style="width:95.8%"></div></div>
+            <span class="tag-pill" style="margin-left:12px;color:var(--accent-2);border-color:rgba(192,132,252,.3);background:rgba(192,132,252,.1);flex-shrink:0">Anthropic</span>
+          </div>
+          <div class="model-row">
+            <div style="width:130px;font-size:14px;color:var(--text-1);font-weight:600">Gemini 2.0 Ultra</div>
+            <div style="width:44px;font-size:13px;color:var(--accent);font-weight:700;text-align:right;margin-right:12px">94.9</div>
+            <div class="model-bar-bg"><div class="model-bar-fill" style="width:94.9%"></div></div>
+            <span class="tag-pill" style="margin-left:12px;color:var(--accent-3);border-color:rgba(240,171,252,.3);background:rgba(240,171,252,.1);flex-shrink:0">Google</span>
+          </div>
+          <div class="model-row">
+            <div style="width:130px;font-size:14px;color:var(--text-1);font-weight:600">Llama 4 405B</div>
+            <div style="width:44px;font-size:13px;color:var(--accent);font-weight:700;text-align:right;margin-right:12px">93.2</div>
+            <div class="model-bar-bg"><div class="model-bar-fill" style="width:93.2%"></div></div>
+            <span class="tag-pill" style="margin-left:12px;color:var(--good);border-color:rgba(134,239,172,.3);background:rgba(134,239,172,.1);flex-shrink:0">Meta 开源</span>
+          </div>
+          <div class="model-row">
+            <div style="width:130px;font-size:14px;color:var(--text-1);font-weight:600">DeepSeek R3</div>
+            <div style="width:44px;font-size:13px;color:var(--accent);font-weight:700;text-align:right;margin-right:12px">92.7</div>
+            <div class="model-bar-bg"><div class="model-bar-fill" style="width:92.7%"></div></div>
+            <span class="tag-pill" style="margin-left:12px;color:var(--warn);border-color:rgba(253,230,138,.3);background:rgba(253,230,138,.1);flex-shrink:0">DeepSeek</span>
+          </div>
+          <div class="model-row">
+            <div style="width:130px;font-size:14px;color:var(--text-1);font-weight:600">Qwen3 Max</div>
+            <div style="width:44px;font-size:13px;color:var(--accent);font-weight:700;text-align:right;margin-right:12px">91.8</div>
+            <div class="model-bar-bg"><div class="model-bar-fill" style="width:91.8%"></div></div>
+            <span class="tag-pill" style="margin-left:12px;color:var(--warn);border-color:rgba(253,230,138,.3);background:rgba(253,230,138,.1);flex-shrink:0">阿里</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="glass-card" style="padding:20px 24px">
+          <div style="font-size:13px;color:var(--accent);margin-bottom:12px;font-weight:600">核心趋势观察</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <span style="color:var(--accent-2);font-size:18px;flex-shrink:0">①</span>
+              <p style="color:var(--text-2);font-size:14px;line-height:1.6">Top-6 模型分差仅 4.6 分，<b style="color:var(--text-1)">能力高度趋同</b>，竞争转向成本与生态</p>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <span style="color:var(--accent-2);font-size:18px;flex-shrink:0">②</span>
+              <p style="color:var(--text-2);font-size:14px;line-height:1.6"><b style="color:var(--text-1)">开源模型追平闭源</b>：Llama 4 405B 商用能力与 GPT-4 Turbo 持平</p>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <span style="color:var(--accent-2);font-size:18px;flex-shrink:0">③</span>
+              <p style="color:var(--text-2);font-size:14px;line-height:1.6"><b style="color:var(--text-1)">中国模型强势崛起</b>：DeepSeek、Qwen 双双进入全球前六</p>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card" style="padding:18px 24px;background:rgba(125,211,252,.06);border-color:rgba(125,211,252,.2)">
+          <div style="font-size:12px;color:var(--accent);margin-bottom:8px;letter-spacing:.04em">INSIGHT</div>
+          <p style="color:var(--text-1);font-size:15px;line-height:1.7">"模型能力差异正在消失，<b>下一个护城河是推理速度、价格和 API 生态</b>，而不是 benchmark 分数。"</p>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">大模型格局</span><span class="slide-number" data-current="3" data-total="10"></span></div>
+    <div class="notes">重点：开源模型追上闭源这件事的影响是巨大的。这意味着 API 定价战在 2026 年已经白热化，输入价格比 2023 年便宜了 98%。</div>
+  </section>
+
+  <!-- ④ 技术突破时间线 -->
+  <section class="slide" data-title="Timeline">
+    <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">03 · TECHNOLOGY TIMELINE</span></div>
+    <h2 data-anim="fade-down" style="font-size:48px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:28px">三年七次<span class="grad-text">范式跃迁</span></h2>
+    <div style="display:flex;flex-direction:column;gap:0;position:relative">
+      <div style="position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--accent),var(--accent-2),var(--accent-3));opacity:.4"></div>
+      <div class="anim-stagger-list" data-anim-target style="display:flex;flex-direction:column;gap:0;padding-left:32px">
+        <div style="display:flex;align-items:flex-start;gap:20px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="position:absolute;left:0;width:14px;height:14px;border-radius:50%;background:var(--grad);margin-top:4px;box-shadow:0 0 12px rgba(125,211,252,.6)"></div>
+          <span style="font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0;width:72px;font-family:'JetBrains Mono',monospace">2023 Q1</span>
+          <div><b style="color:var(--text-1);font-size:15px">ChatGPT 突破 1 亿月活</b><span style="color:var(--text-3);font-size:13px;margin-left:12px">史上最快达到 1 亿用户的消费产品，打开大众 AI 认知</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:20px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <span style="font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0;width:72px;font-family:'JetBrains Mono',monospace">2023 Q3</span>
+          <div><b style="color:var(--text-1);font-size:15px">多模态时代开启</b><span style="color:var(--text-3);font-size:13px;margin-left:12px">GPT-4V、Gemini Pro Vision 上线，图文理解成为标配能力</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:20px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <span style="font-size:13px;font-weight:700;color:var(--accent-2);flex-shrink:0;width:72px;font-family:'JetBrains Mono',monospace">2024 Q2</span>
+          <div><b style="color:var(--text-1);font-size:15px">长上下文革命</b><span style="color:var(--text-3);font-size:13px;margin-left:12px">Gemini 1.5 Pro 突破 1M token，整本书可以放进 context window</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:20px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <span style="font-size:13px;font-weight:700;color:var(--accent-2);flex-shrink:0;width:72px;font-family:'JetBrains Mono',monospace">2024 Q4</span>
+          <div><b style="color:var(--text-1);font-size:15px">推理模型崛起</b><span style="color:var(--text-3);font-size:13px;margin-left:12px">o1 系列、DeepSeek R1 开启「慢思考」模式，数学/代码能力飞跃</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:20px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <span style="font-size:13px;font-weight:700;color:var(--accent-3);flex-shrink:0;width:72px;font-family:'JetBrains Mono',monospace">2025 Q2</span>
+          <div><b style="color:var(--text-1);font-size:15px">AI Agent 商业化元年</b><span style="color:var(--text-3);font-size:13px;margin-left:12px">可自主执行多步骤任务的 Agent 开始大规模替代重复脑力劳动</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:20px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <span style="font-size:13px;font-weight:700;color:var(--accent-3);flex-shrink:0;width:72px;font-family:'JetBrains Mono',monospace">2025 Q4</span>
+          <div><b style="color:var(--text-1);font-size:15px">实体 AI 接管</b><span style="color:var(--text-3);font-size:13px;margin-left:12px">人形机器人量产，AI 从数字世界延伸至物理世界的操控</span></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:20px;padding:14px 0">
+          <span style="font-size:13px;font-weight:700;color:var(--good);flex-shrink:0;width:72px;font-family:'JetBrains Mono',monospace">2026 NOW</span>
+          <div><b style="color:var(--text-1);font-size:15px">AI 原生应用爆发</b><span style="color:var(--text-3);font-size:13px;margin-left:12px">超过 60% 的新 SaaS 产品以 AI 为核心功能，而非辅助功能</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">技术时间线</span><span class="slide-number" data-current="4" data-total="10"></span></div>
+    <div class="notes">每一个节点都是一次范式转变，不是渐进式改进。注意频率——平均每 5-6 个月就有一次重大跃迁，这是历史上从未有过的迭代速度。</div>
+  </section>
+
+  <!-- ⑤ 行业落地 -->
+  <section class="slide" data-title="Industry">
+    <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">04 · INDUSTRY ADOPTION</span></div>
+    <h2 data-anim="fade-down" style="font-size:48px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:8px">AI 已深度渗透<span class="grad-text"> 6 大核心行业</span></h2>
+    <p style="color:var(--text-2);font-size:16px;margin-bottom:24px">从概念验证到生产落地，平均周期从 18 个月压缩至 4.2 个月</p>
+    <div class="grid g3" style="gap:16px">
+      <div class="sector-card anim-fade-up" data-anim="fade-up">
+        <div style="font-size:32px;margin-bottom:10px">🏥</div>
+        <h4 style="color:var(--text-1);font-size:16px;margin-bottom:6px">医疗健康</h4>
+        <div style="font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px">$186B</div>
+        <p style="color:var(--text-3);font-size:13px;line-height:1.6">影像诊断 AI 准确率达 97.3%，超过顶级放射科医生；药物研发周期缩短 60%</p>
+        <div style="margin-top:10px;font-size:11px;color:var(--good)">↑ 高渗透率</div>
+      </div>
+      <div class="sector-card anim-fade-up" data-anim="fade-up">
+        <div style="font-size:32px;margin-bottom:10px">💰</div>
+        <h4 style="color:var(--text-1);font-size:16px;margin-bottom:6px">金融服务</h4>
+        <div style="font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px">$164B</div>
+        <p style="color:var(--text-3);font-size:13px;line-height:1.6">量化交易 72% 由 AI 执行；欺诈检测误报率下降 84%；智能客服解决率 91%</p>
+        <div style="margin-top:10px;font-size:11px;color:var(--good)">↑ 高渗透率</div>
+      </div>
+      <div class="sector-card anim-fade-up" data-anim="fade-up">
+        <div style="font-size:32px;margin-bottom:10px">⚙️</div>
+        <h4 style="color:var(--text-1);font-size:16px;margin-bottom:6px">制造业</h4>
+        <div style="font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px">$142B</div>
+        <p style="color:var(--text-3);font-size:13px;line-height:1.6">AI 质检良品率提升至 99.94%；预测性维护减少非计划停机 67%</p>
+        <div style="margin-top:10px;font-size:11px;color:var(--warn)">→ 中高渗透</div>
+      </div>
+      <div class="sector-card anim-fade-up" data-anim="fade-up">
+        <div style="font-size:32px;margin-bottom:10px">📚</div>
+        <h4 style="color:var(--text-1);font-size:16px;margin-bottom:6px">教育</h4>
+        <div style="font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px">$87B</div>
+        <p style="color:var(--text-3);font-size:13px;line-height:1.6">个性化辅导使平均学习效率提升 2.3×；AI 助教覆盖全球 4.8 亿学生</p>
+        <div style="margin-top:10px;font-size:11px;color:var(--warn)">→ 中高渗透</div>
+      </div>
+      <div class="sector-card anim-fade-up" data-anim="fade-up">
+        <div style="font-size:32px;margin-bottom:10px">🚗</div>
+        <h4 style="color:var(--text-1);font-size:16px;margin-bottom:6px">自动驾驶</h4>
+        <div style="font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px">$76B</div>
+        <p style="color:var(--text-3);font-size:13px;line-height:1.6">Waymo 日均完成 200 万英里无人驾驶；端到端 AI 驾驶模型成主流架构</p>
+        <div style="margin-top:10px;font-size:11px;color:var(--accent)">◎ 规模化阶段</div>
+      </div>
+      <div class="sector-card anim-fade-up" data-anim="fade-up">
+        <div style="font-size:32px;margin-bottom:10px">💻</div>
+        <h4 style="color:var(--text-1);font-size:16px;margin-bottom:6px">软件开发</h4>
+        <div style="font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px">$68B</div>
+        <p style="color:var(--text-3);font-size:13px;line-height:1.6">78% 开发者日常使用 AI 辅助；AI 生成代码占 GitHub 提交量的 43%</p>
+        <div style="margin-top:10px;font-size:11px;color:var(--good)">↑ 高渗透率</div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">行业落地</span><span class="slide-number" data-current="5" data-total="10"></span></div>
+    <div class="notes">软件开发这个行业的数据最直观——你们自己就在用 Cursor 或 Copilot。AI 辅助编程已经从"尝鲜"变成"标配"。</div>
+  </section>
+
+  <!-- ⑥ 算力军备竞赛 -->
+  <section class="slide" data-title="Compute">
+    <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">05 · COMPUTE ARMS RACE</span></div>
+    <h2 data-anim="fade-down" style="font-size:48px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:8px">算力即国力：<span class="grad-text">$600B 的赌注</span></h2>
+    <p style="color:var(--text-2);font-size:16px;margin-bottom:24px">2025—2026 年全球 AI 数据中心投资规模创历史峰值，算力成为新时代的石油</p>
+    <div class="grid g2" style="gap:24px;align-items:start">
+      <div style="height:320px"><canvas id="compute-chart"></canvas></div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="glass-card-sm" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;color:var(--text-3)">Nvidia H200 出货量</div>
+            <div style="font-size:22px;font-weight:800;color:var(--text-1)">480<span style="font-size:14px;color:var(--text-3)"> 万片 / 年</span></div>
+          </div>
+          <div style="padding:6px 12px;border-radius:999px;background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.25);font-size:12px;color:var(--accent)">供不应求</div>
+        </div>
+        <div class="glass-card-sm" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;color:var(--text-3)">单次训练最大算力</div>
+            <div style="font-size:22px;font-weight:800;color:var(--text-1)">2.4×10<sup style="font-size:14px">26</sup><span style="font-size:14px;color:var(--text-3)"> FLOPs</span></div>
+          </div>
+          <div style="padding:6px 12px;border-radius:999px;background:rgba(134,239,172,.12);border:1px solid rgba(134,239,172,.25);font-size:12px;color:var(--good)">GPT-5</div>
+        </div>
+        <div class="glass-card-sm" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;color:var(--text-3)">推理成本（每 1M token）</div>
+            <div style="font-size:22px;font-weight:800;color:var(--text-1)">$0.08<span style="font-size:14px;color:var(--good)"> vs $8（2023）</span></div>
+          </div>
+          <div style="padding:6px 12px;border-radius:999px;background:rgba(134,239,172,.12);border:1px solid rgba(134,239,172,.25);font-size:12px;color:var(--good)">↓ 99%</div>
+        </div>
+        <div class="glass-card-sm" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;color:var(--text-3)">国产 GPU 芯片份额</div>
+            <div style="font-size:22px;font-weight:800;color:var(--text-1)">23%<span style="font-size:14px;color:var(--text-3)"> 国内市场</span></div>
+          </div>
+          <div style="padding:6px 12px;border-radius:999px;background:rgba(253,230,138,.12);border:1px solid rgba(253,230,138,.25);font-size:12px;color:var(--warn)">快速增长</div>
+        </div>
+        <div class="glass-card" style="padding:18px 22px;background:rgba(125,211,252,.06);border-color:rgba(125,211,252,.2);margin-top:4px">
+          <p style="color:var(--text-2);font-size:14px;line-height:1.7">Scaling Law 尚未达到极限：<b style="color:var(--text-1)">每增加 10× 算力，模型能力提升约 2×</b>。2027 年预计出现首个 $10B 训练成本的模型。</p>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">算力竞争</span><span class="slide-number" data-current="6" data-total="10"></span></div>
+    <div class="notes">推理成本从 $8 降到 $0.08，100 倍的价格下降，这是真正改变应用开发经济模型的数字。三年前不可能做的 AI 产品，现在成本上完全可行。</div>
+  </section>
+
+  <!-- ⑦ Agent 时代 -->
+  <section class="slide" data-title="Agent Era">
+    <div data-fx="neural-net" style="position:absolute;inset:0;opacity:.3;pointer-events:none"></div>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">06 · AGENT ERA</span></div>
+      <h2 data-anim="fade-down" style="font-size:48px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:8px">从<span class="grad-text"> 工具 </span>到<span class="grad-text"> 同事</span>：AI Agent 重塑工作流</h2>
+      <p style="color:var(--text-2);font-size:16px;margin-bottom:24px">2026 年，具备自主规划和执行能力的 AI Agent 成为企业数字员工的重要组成</p>
+      <div class="grid g2" style="gap:24px;flex:1">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="glass-card" style="padding:20px 24px">
+            <div style="font-size:12px;color:var(--accent);letter-spacing:.06em;margin-bottom:14px">AGENT 能力跃迁</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="color:var(--text-2);font-size:14px">单步指令执行</span>
+                <div style="display:flex;align-items:center;gap:4px"><div style="width:80px;height:6px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:100%;height:100%;background:var(--good);border-radius:3px"></div></div><span style="color:var(--good);font-size:12px;width:36px;text-align:right">100%</span></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="color:var(--text-2);font-size:14px">多步任务规划</span>
+                <div style="display:flex;align-items:center;gap:4px"><div style="width:80px;height:6px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:87%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="color:var(--accent);font-size:12px;width:36px;text-align:right">87%</span></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="color:var(--text-2);font-size:14px">工具调用 &amp; API 集成</span>
+                <div style="display:flex;align-items:center;gap:4px"><div style="width:80px;height:6px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:93%;height:100%;background:var(--accent);border-radius:3px"></div></div><span style="color:var(--accent);font-size:12px;width:36px;text-align:right">93%</span></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="color:var(--text-2);font-size:14px">长期记忆与上下文</span>
+                <div style="display:flex;align-items:center;gap:4px"><div style="width:80px;height:6px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:74%;height:100%;background:var(--warn);border-radius:3px"></div></div><span style="color:var(--warn);font-size:12px;width:36px;text-align:right">74%</span></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="color:var(--text-2);font-size:14px">自主错误恢复</span>
+                <div style="display:flex;align-items:center;gap:4px"><div style="width:80px;height:6px;background:rgba(255,255,255,.08);border-radius:3px"><div style="width:61%;height:100%;background:var(--bad);border-radius:3px"></div></div><span style="color:var(--bad);font-size:12px;width:36px;text-align:right">61%</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="glass-card" style="padding:18px 22px">
+            <div style="font-size:12px;color:var(--accent);letter-spacing:.06em;margin-bottom:12px">HEAD COUNT 影响</div>
+            <div style="display:flex;gap:24px">
+              <div style="text-align:center">
+                <div style="font-size:28px;font-weight:800;color:var(--accent)">4.2×</div>
+                <div style="font-size:12px;color:var(--text-3);margin-top:4px">单人效能提升</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:28px;font-weight:800;color:var(--accent-2)">38%</div>
+                <div style="font-size:12px;color:var(--text-3);margin-top:4px">企业 BPO 外包减少</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:28px;font-weight:800;color:var(--accent-3)">$1.3T</div>
+                <div style="font-size:12px;color:var(--text-3);margin-top:4px">可自动化劳动价值</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="font-size:13px;color:var(--text-3);letter-spacing:.04em;padding:0 4px">典型 Agent 工作流</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="glass-card-sm" style="display:flex;align-items:center;gap:14px">
+              <span style="font-size:20px">🔍</span>
+              <div><b style="color:var(--text-1);font-size:14px">Research Agent</b><p style="color:var(--text-3);font-size:12px;margin-top:2px">自主检索 → 综合分析 → 生成报告，替代初级分析师工作</p></div>
+            </div>
+            <div class="glass-card-sm" style="display:flex;align-items:center;gap:14px">
+              <span style="font-size:20px">💻</span>
+              <div><b style="color:var(--text-1);font-size:14px">Coding Agent</b><p style="color:var(--text-3);font-size:12px;margin-top:2px">需求理解 → 代码生成 → 测试修复 → PR 提交，全流程自动化</p></div>
+            </div>
+            <div class="glass-card-sm" style="display:flex;align-items:center;gap:14px">
+              <span style="font-size:20px">📊</span>
+              <div><b style="color:var(--text-1);font-size:14px">Data Agent</b><p style="color:var(--text-3);font-size:12px;margin-top:2px">自然语言查询 → SQL 生成 → 数据可视化 → 洞察摘要</p></div>
+            </div>
+            <div class="glass-card-sm" style="display:flex;align-items:center;gap:14px">
+              <span style="font-size:20px">🤝</span>
+              <div><b style="color:var(--text-1);font-size:14px">Customer Agent</b><p style="color:var(--text-3);font-size:12px;margin-top:2px">全渠道接入 → 情绪感知 → 问题解决 → 无缝人工转接</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">Agent 时代</span><span class="slide-number" data-current="7" data-total="10"></span></div>
+    <div class="notes">Agent 和 Copilot 的本质区别：Copilot 是辅助人做决策，Agent 是代替人执行决策。这个转变在 2025 年开始真正落地。</div>
+  </section>
+
+  <!-- ⑧ 中国 AI 生态 -->
+  <section class="slide" data-title="China AI">
+    <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">07 · CHINA AI ECOSYSTEM</span></div>
+    <h2 data-anim="fade-down" style="font-size:48px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:8px">中国 AI：<span class="grad-text">从追赶到并跑</span></h2>
+    <p style="color:var(--text-2);font-size:16px;margin-bottom:24px">在算力制裁压力下，中国 AI 通过架构创新和数据优势实现突围，局部领域形成领先</p>
+    <div class="grid g3" style="gap:16px;margin-bottom:20px">
+      <div class="glass-card" style="text-align:center;padding:22px">
+        <div style="font-size:36px;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">¥1.2T</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:6px">2026 中国 AI 产业规模</div>
+        <div style="font-size:11px;color:var(--good);margin-top:8px">↑ 54% YoY</div>
+      </div>
+      <div class="glass-card" style="text-align:center;padding:22px">
+        <div style="font-size:36px;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">200+</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:6px">国内发布大模型数量</div>
+        <div style="font-size:11px;color:var(--warn);margin-top:8px">前 5 占 82% 流量</div>
+      </div>
+      <div class="glass-card" style="text-align:center;padding:22px">
+        <div style="font-size:36px;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">46%</div>
+        <div style="font-size:13px;color:var(--text-3);margin-top:6px">全球 AI 专利申请占比</div>
+        <div style="font-size:11px;color:var(--good);margin-top:8px">全球第一</div>
+      </div>
+    </div>
+    <div class="grid g2" style="gap:16px">
+      <div class="glass-card" style="padding:20px 24px">
+        <div style="font-size:12px;color:var(--accent);letter-spacing:.06em;margin-bottom:14px">主要玩家格局</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;gap:10px"><span style="font-size:15px;font-weight:600;color:var(--text-1)">DeepSeek</span><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(134,239,172,.12);color:var(--good)">推理模型</span></div>
+            <span style="font-size:13px;color:var(--text-3)">全球影响力 ★★★★★</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;gap:10px"><span style="font-size:15px;font-weight:600;color:var(--text-1)">通义 Qwen</span><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(125,211,252,.12);color:var(--accent)">多模态</span></div>
+            <span style="font-size:13px;color:var(--text-3)">综合排名 ★★★★☆</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;gap:10px"><span style="font-size:15px;font-weight:600;color:var(--text-1)">文心 ERNIE</span><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(192,132,252,.12);color:var(--accent-2)">中文专项</span></div>
+            <span style="font-size:13px;color:var(--text-3)">国内市占 ★★★★☆</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+            <div style="display:flex;align-items:center;gap:10px"><span style="font-size:15px;font-weight:600;color:var(--text-1)">混元 / Kimi</span><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(253,230,138,.12);color:var(--warn)">长文本</span></div>
+            <span style="font-size:13px;color:var(--text-3)">细分领先 ★★★★☆</span>
+          </div>
+        </div>
+      </div>
+      <div class="glass-card" style="padding:20px 24px">
+        <div style="font-size:12px;color:var(--accent);letter-spacing:.06em;margin-bottom:14px">中国 AI 竞争优势</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:12px">
+            <span style="color:var(--good);font-size:18px;flex-shrink:0">✓</span>
+            <p style="color:var(--text-2);font-size:14px;line-height:1.6"><b style="color:var(--text-1)">数据规模</b>：最大的中文语料库 + 14 亿用户的行为数据</p>
+          </div>
+          <div style="display:flex;gap:12px">
+            <span style="color:var(--good);font-size:18px;flex-shrink:0">✓</span>
+            <p style="color:var(--text-2);font-size:14px;line-height:1.6"><b style="color:var(--text-1)">成本效率</b>：DeepSeek R1 用 1/10 成本训练出同级别模型</p>
+          </div>
+          <div style="display:flex;gap:12px">
+            <span style="color:var(--good);font-size:18px;flex-shrink:0">✓</span>
+            <p style="color:var(--text-2);font-size:14px;line-height:1.6"><b style="color:var(--text-1)">应用落地</b>：制造、医疗、政务场景有独特的数据优势</p>
+          </div>
+          <div style="display:flex;gap:12px">
+            <span style="color:var(--bad);font-size:18px;flex-shrink:0">✗</span>
+            <p style="color:var(--text-2);font-size:14px;line-height:1.6"><b style="color:var(--text-1)">算力制约</b>：先进制程芯片供应受限，是最大瓶颈</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">中国 AI 生态</span><span class="slide-number" data-current="8" data-total="10"></span></div>
+    <div class="notes">DeepSeek R1 在 2025 年初是一个重要事件——它证明了算力不是唯一变量，架构创新和工程效率同样可以突破能力天花板。</div>
+  </section>
+
+  <!-- ⑨ 挑战与治理 -->
+  <section class="slide" data-title="Challenges">
+    <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">08 · CHALLENGES &amp; GOVERNANCE</span></div>
+    <h2 data-anim="fade-down" style="font-size:48px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:8px">高速发展的<span class="grad-text">另一面</span>：风险与挑战</h2>
+    <p style="color:var(--text-2);font-size:16px;margin-bottom:24px">技术能力超越监管速度，全球 AI 治理框架进入关键建构期</p>
+    <div class="grid g2" style="gap:20px">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="glass-card" style="padding:20px;border-left:3px solid var(--bad)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:18px">⚠️</span>
+            <h4 style="color:var(--text-1);font-size:16px">幻觉与可靠性</h4>
+          </div>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.6">顶级模型幻觉率仍在 3–8%，医疗/法律/金融等高风险场景部署需要 Human-in-the-loop 兜底</p>
+        </div>
+        <div class="glass-card" style="padding:20px;border-left:3px solid var(--warn)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:18px">🔒</span>
+            <h4 style="color:var(--text-1);font-size:16px">数据隐私与安全</h4>
+          </div>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.6">企业敏感数据上传第三方 API 存在泄露风险；AI 生成的深度伪造内容成为新型社会工程攻击载体</p>
+        </div>
+        <div class="glass-card" style="padding:20px;border-left:3px solid var(--accent-2)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:18px">⚡</span>
+            <h4 style="color:var(--text-1);font-size:16px">能源消耗</h4>
+          </div>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.6">全球 AI 数据中心 2026 年用电量将超过法国全国用电总量；碳排放与绿色承诺产生直接冲突</p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="glass-card" style="padding:20px;border-left:3px solid var(--accent)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:18px">👥</span>
+            <h4 style="color:var(--text-1);font-size:16px">就业结构冲击</h4>
+          </div>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.6">WEF 预测 2025–2030 年 AI 将替代 8500 万个岗位，同时创造 9700 万个新岗位，但技能转型周期滞后</p>
+        </div>
+        <div class="glass-card" style="padding:20px;border-left:3px solid var(--accent-3)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="font-size:18px">⚖️</span>
+            <h4 style="color:var(--text-1);font-size:16px">监管碎片化</h4>
+          </div>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.6">EU AI Act 已生效；美国、中国、英国各自为政；跨境 AI 服务面临合规成本爆炸式增长</p>
+        </div>
+        <div class="glass-card" style="padding:18px 20px;background:rgba(125,211,252,.06);border-color:rgba(125,211,252,.2)">
+          <div style="font-size:12px;color:var(--accent);margin-bottom:8px;letter-spacing:.04em">治理进展</div>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.6">G7 AI 安全峰会已完成首个国际 AI 安全协议草案，<b style="color:var(--text-1)">AI 安全测评</b>正成为上市和采购前置条件</p>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">挑战与治理</span><span class="slide-number" data-current="9" data-total="10"></span></div>
+    <div class="notes">挑战不是要否定 AI，而是让我们更清醒。技术上我们很乐观，治理上我们要保持谨慎。这两件事不矛盾。</div>
+  </section>
+
+  <!-- ⑩ 未来展望 -->
+  <section class="slide" data-title="Future" style="overflow:hidden">
+    <div data-fx="constellation" style="position:absolute;inset:0;opacity:.4;pointer-events:none"></div>
+    <div style="position:relative;z-index:1;height:100%;display:flex;flex-direction:column">
+      <div class="deck-header"><span style="font-size:12px;color:var(--accent);letter-spacing:.06em">09 · FUTURE OUTLOOK 2027–2030</span></div>
+      <h2 data-anim="rise-in" style="font-size:52px;font-weight:800;letter-spacing:-.025em;color:#fff;margin-bottom:8px">下一个<span class="grad-text">四年</span>，将比过去四年更剧烈</h2>
+      <p style="color:var(--text-2);font-size:16px;margin-bottom:28px">三个确定性趋势 + 一个正在成形的范式</p>
+      <div class="grid g3" style="gap:18px;margin-bottom:20px">
+        <div class="glass-card anim-fade-up" data-anim="fade-up" style="padding:24px">
+          <div style="font-size:11px;color:var(--accent);letter-spacing:.08em;margin-bottom:12px">TREND 01 · 2027</div>
+          <h4 style="color:var(--text-1);font-size:18px;font-weight:700;margin-bottom:10px">通用推理能力突破</h4>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.7">AI 在数学、科学推理上超越博士水平，开启 AI 主导的科学研究周期，药物发现、材料科学将率先受益</p>
+          <div class="glow-line" style="margin:16px 0 0"></div>
+        </div>
+        <div class="glass-card anim-fade-up" data-anim="fade-up" style="padding:24px">
+          <div style="font-size:11px;color:var(--accent-2);letter-spacing:.08em;margin-bottom:12px">TREND 02 · 2028</div>
+          <h4 style="color:var(--text-1);font-size:18px;font-weight:700;margin-bottom:10px">具身 AI 规模化</h4>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.7">人形机器人进入工厂和家庭，AI 不再局限于屏幕。物理世界的自动化将以超预期速度渗透服务业</p>
+          <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(192,132,252,.4),transparent);margin:16px 0 0"></div>
+        </div>
+        <div class="glass-card anim-fade-up" data-anim="fade-up" style="padding:24px">
+          <div style="font-size:11px;color:var(--accent-3);letter-spacing:.08em;margin-bottom:12px">TREND 03 · 2029–30</div>
+          <h4 style="color:var(--text-1);font-size:18px;font-weight:700;margin-bottom:10px">AI 原生经济</h4>
+          <p style="color:var(--text-2);font-size:14px;line-height:1.7">50% GDP 增量来自 AI 生产力提升；AI 作为独立经济主体出现，自主管理资产、签署合同</p>
+          <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(240,171,252,.4),transparent);margin:16px 0 0"></div>
+        </div>
+      </div>
+      <div class="glass-card" style="padding:20px 28px;background:linear-gradient(135deg,rgba(125,211,252,.08),rgba(192,132,252,.08));border-color:rgba(125,211,252,.2)">
+        <div style="display:flex;align-items:center;gap:20px">
+          <div style="flex:1">
+            <div style="font-size:12px;color:var(--accent);letter-spacing:.06em;margin-bottom:6px">THE BIG QUESTION</div>
+            <p style="color:var(--text-1);font-size:18px;font-weight:600;line-height:1.5">我们正在构建的，可能是人类历史上最重要的技术。<br><b class="grad-text">现在入场的人，将定义未来十年的格局。</b></p>
+          </div>
+          <div style="text-align:center;flex-shrink:0">
+            <div style="font-size:52px;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1">$15T</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:4px">2030 年 AI 经济体量预测</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer"><span style="font-size:12px;color:var(--text-3)">未来展望</span><span class="slide-number" data-current="10" data-total="10"></span></div>
+    <div class="notes">收尾：不是在画大饼，这些预测来自麦肯锡、高盛和 OpenAI 的公开报告。唯一的问题不是"会不会发生"，而是"你在哪个位置"。</div>
+  </section>
+
+</div>
+
+<script src="../../assets/runtime.js"></script>
+<script>
+addEventListener('DOMContentLoaded', () => {
+  const cs = getComputedStyle(document.documentElement);
+  const a1 = cs.getPropertyValue('--accent').trim();
+  const a2 = cs.getPropertyValue('--accent-2').trim();
+  const a3 = cs.getPropertyValue('--accent-3').trim();
+  const t2 = cs.getPropertyValue('--text-2').trim();
+  const t3 = cs.getPropertyValue('--text-3').trim();
+  const border = cs.getPropertyValue('--border').trim();
+
+  // Market growth chart
+  const mw = document.getElementById('market-chart');
+  if (mw) {
+    new Chart(mw, {
+      type: 'bar',
+      data: {
+        labels: ['2022', '2023', '2024', '2025', '2026E'],
+        datasets: [{
+          label: 'AI 市场规模（$B）',
+          data: [195, 420, 740, 1220, 1800],
+          backgroundColor: ['rgba(125,211,252,.3)', 'rgba(125,211,252,.4)', 'rgba(192,132,252,.45)', 'rgba(192,132,252,.55)', 'rgba(240,171,252,.7)'],
+          borderColor: [a1, a1, a2, a2, a3],
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: t2, font: { size: 12 } } } },
+        scales: {
+          x: { ticks: { color: t3 }, grid: { color: border } },
+          y: { ticks: { color: t3, callback: v => '$' + v + 'B' }, grid: { color: border } }
+        }
+      }
+    });
+  }
+
+  // Compute investment chart
+  const cw = document.getElementById('compute-chart');
+  if (cw) {
+    new Chart(cw, {
+      type: 'line',
+      data: {
+        labels: ['2022', '2023', '2024', '2025', '2026E'],
+        datasets: [
+          {
+            label: 'AI 数据中心投资（$B）',
+            data: [48, 92, 186, 380, 600],
+            borderColor: a1, backgroundColor: 'rgba(125,211,252,.08)',
+            fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: a1, borderWidth: 2
+          },
+          {
+            label: 'GPU 芯片出货量（$B）',
+            data: [22, 56, 116, 210, 320],
+            borderColor: a2, backgroundColor: 'rgba(192,132,252,.06)',
+            fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: a2, borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: t2, font: { size: 12 } } } },
+        scales: {
+          x: { ticks: { color: t3 }, grid: { color: border } },
+          y: { ticks: { color: t3, callback: v => '$' + v + 'B' }, grid: { color: border } }
+        }
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>
